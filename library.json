@@ -1,0 +1,22 @@
+{
+  "name": "EspNowNetwork",
+  "keywords": "esp32, esp-now, ESP Now, now",
+  "description": "Arduino library for setting up a network of ESP NOW nodes",
+  "authors":
+  {
+    "name": "Johan Böhlin"
+  },
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/Johboh/EspNowNetwork.git"
+  },
+  "build": {
+      "libLDFMode": "deep"
+  },
+  "frameworks": "arduino",
+  "platforms": ["espressif32"],
+  "dependencies": []
+}
