@@ -86,7 +86,8 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
     typedef EspNowMessageHeaderV1 Message;
     auto *message = (Message *)data;
     // Verify challenge.
-    if (auto challenge = _challenges.find(mac_address); challenge != _challenges.end()) {
+    auto challenge = _challenges.find(mac_address);
+    if (challenge != _challenges.end()) {
       auto expected_challenge = challenge->second;
       if (expected_challenge == message->challenge) {
         metadata.retries = message->retries;
@@ -138,7 +139,8 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr) {
   // We re-use any not yet challanged challange in so the node get same challange back in case
   // they send several challange requests in a row (i.e. miss the first reply).
   // This is to provent any potential out of sync issues.
-  if (auto challenge = _challenges.find(mac_address); challenge != _challenges.end()) {
+  auto challenge = _challenges.find(mac_address);
+  if (challenge != _challenges.end()) {
     // Existing one, reuse.
     message.challenge = challenge->second;
   } else {
