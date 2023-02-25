@@ -59,10 +59,10 @@ struct EspNowChallengeResponseV1 {
  */
 struct EspNowChallengeDownloadResponseV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_UPDATE_RESPONSE_V1;
-  char wifi_ssid[32];
-  char wifi_password[64];
-  char url[96];       // url to firmware binary. Note the max file path.
-  uint16_t port = 80; // HTTP port to use.
+  char wifi_ssid[32];     // WiFi SSID that node should connect to.
+  char wifi_password[64]; // WiFi password that the node should connect to.
+  char url[96];           // url where to find firmware binary. Note the max file path.
+  uint16_t port = 80;     // HTTP port to use.
 };
 
 #pragma pack(0)

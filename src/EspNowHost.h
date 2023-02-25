@@ -6,6 +6,7 @@
 #include <EspNowCrypt.h>
 #include <functional>
 #include <map>
+#include <optional>
 
 /**
  * @brief ESP Now Network: Host
@@ -52,6 +53,21 @@ public:
    */
   typedef std::function<void(MessageMetadata metadata, const uint8_t *message)> OnApplicationMessage;
 
+  struct FirmwareUpdate {
+    char wifi_ssid[32];     // WiFi SSID that node should connect to.
+    char wifi_password[64]; // WiFi password that the node should connect to.
+    char url[96];           // url where to find firmware binary. Note the max file path.
+    uint16_t port = 80;     // HTTP port to use.
+  };
+
+  /**
+   * @brief Callback that if returning a [FirmwareUpdate], will tell host to upgrade its firmware given the metadata in
+   * [FirmwareUpdate].
+   *
+   * return std::nullopt if there is no firmware update available for the given mac_address
+   */
+  typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address)> FirmwareUpdateAvailable;
+
 public:
   /**
    * @brief Construct a new EspNowHost
@@ -60,10 +76,11 @@ public:
    * @param on_new_message callback on any new message received, regardless of type, validation, decrypted correctly
    * etc. Intended for turning on led or similar to indicate new package.
    * @param on_application_message callback when there is a verified, decrypted application message received.
+   * @param firwmare_update callback to check if a firmware update is available.
    * @param on_log callback when the host want to log something.
    */
   EspNowHost(EspNowCrypt &crypt, OnNewMessage on_new_message, OnApplicationMessage on_application_message,
-             OnLog on_log = {});
+             FirmwareUpdateAvailable firwmare_update = {}, OnLog on_log = {});
 
 public:
   /**
@@ -94,6 +111,7 @@ private:
 
   OnLog _on_log;
   OnNewMessage _on_new_message;
+  FirmwareUpdateAvailable _firwmare_update;
   OnApplicationMessage _on_application_message;
 };
 

@@ -31,9 +31,9 @@ void esp_now_on_data_callback(const uint8_t *mac_addr, const uint8_t *data, int 
 }
 
 EspNowHost::EspNowHost(EspNowCrypt &crypt, OnNewMessage on_new_message, OnApplicationMessage on_application_message,
-                       OnLog on_log)
-    : _crypt(crypt), _on_log(on_log), _on_new_message(on_new_message), _on_application_message(on_application_message) {
-}
+                       FirmwareUpdateAvailable firwmare_update, OnLog on_log)
+    : _crypt(crypt), _on_log(on_log), _on_new_message(on_new_message), _firwmare_update(firwmare_update),
+      _on_application_message(on_application_message) {}
 
 bool EspNowHost::setup() {
   esp_err_t r = esp_now_init();
@@ -137,6 +137,24 @@ void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr) {
 
 void EspNowHost::handleChallengeRequest(uint8_t *mac_addr) {
   uint64_t mac_address = macToMac(mac_addr);
+
+  // Any firmware to update?
+  if (_firwmare_update) {
+    auto metadata = _firwmare_update(mac_address);
+    if (metadata) {
+      log("Sending firmware update response to 0x" + String(mac_address), ESP_LOG_INFO);
+      EspNowChallengeDownloadResponseV1 message;
+      memcpy(message.wifi_ssid, metadata->wifi_ssid, min(sizeof(message.wifi_ssid), sizeof(metadata->wifi_ssid)));
+      memcpy(message.wifi_password, metadata->wifi_password,
+             min(sizeof(message.wifi_password), sizeof(metadata->wifi_password)));
+      memcpy(message.url, metadata->url, min(sizeof(message.url), sizeof(metadata->url)));
+      message.port = metadata->port;
+      sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeDownloadResponseV1));
+      return;
+    }
+  }
+
+  // No firmware update (early return above)
   EspNowChallengeResponseV1 message;
   // Not sure how we want to do it here. For now, if we already have a challenge, don't generate a new one.
   // We always remove a challenge once it has been used, or o challenge verification failure.
@@ -152,7 +170,6 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr) {
     message.challenge = esp_random();
     _challenges[mac_address] = message.challenge;
   }
-
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeResponseV1));
 }
 
