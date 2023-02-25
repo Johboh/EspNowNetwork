@@ -94,7 +94,6 @@ private:
 private:
   OnLog _on_log;
   EspNowCrypt &_crypt;
-  uint16_t _retries = 0;
   Preferences _preferences;
   bool _setup_successful = false;
   uint8_t _esp_now_host_address[6];

@@ -209,7 +209,8 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   memcpy(buff.get(), &message, sizeof(Message));
   memcpy(buff.get() + sizeof(Message), sub_message, sub_message_size);
 
-  _retries = 0;
+  uint16_t attempt = 0;
+  _on_log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
   sendMessageInternal(buff.get(), size);
 
   // If negative retries, don't wait.
@@ -218,11 +219,11 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   }
 
   bool success = false;
-  while (_retries++ < retries) {
+  while (attempt++ < retries) {
     auto bits = xEventGroupWaitBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT, pdTRUE, pdFALSE,
                                     TICKS_TO_WAIT_FOR_EVENT);
     if ((bits & SEND_SUCCESS_BIT) != 0) {
-      _on_log("Message successfully delivered to host", ESP_LOG_INFO);
+      _on_log("Message successfully delivered to host", ESP_LOG_DEBUG);
       success = true;
       break;
     } else {
@@ -231,15 +232,16 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
       // If no bit is set then its either a timeout from xEventGroupWaitBits or
       // something else. A timeout will almost never happen probably, as esp-now
       // is very fast in acking/nacking.
-      delay(_retries * 5); // Backoff
-      message.retries = _retries;
+      delay(attempt * 5); // Backoff
+      message.retries = attempt;
       memcpy(buff.get(), &message, sizeof(Message)); // "Refresh" message in buffer.
+      _on_log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
       sendMessageInternal(buff.get(), size);
       continue;
     }
   }
 
-  if (!success && _retries >= retries) {
+  if (!success && attempt >= retries) {
     // Failed to get ACK on message. We have a valid host as we got challenge response above.
     _on_log("Failed to send message after retries.", ESP_LOG_ERROR);
     return false;
@@ -261,7 +263,7 @@ void EspNowNode::sendMessageInternal(uint8_t *buff, size_t length) {
     const char *errstr = esp_err_to_name(r);
     _on_log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
   } else {
-    _on_log("Message sent OK (not yet delivered)", ESP_LOG_INFO);
+    _on_log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
   }
 }
 

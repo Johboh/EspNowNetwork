@@ -172,7 +172,7 @@ void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, si
     const char *errstr = esp_err_to_name(r);
     _on_log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
   } else {
-    _on_log("Message sent OK (not yet delivered)", ESP_LOG_INFO);
+    _on_log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
   }
 
   // We are done with the peer.
