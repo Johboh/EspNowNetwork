@@ -1,5 +1,8 @@
+#include "Update.h"
+#include "Wifi.h"
 #include "esp-now-structs.h"
 #include <EspNowNode.h>
+#include <HTTPClient.h>
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -186,10 +189,25 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
         ESP_LOG_INFO);
     auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowChallengeRequestV1));
     if (decrypted_data != nullptr) {
-      EspNowChallengeResponseV1 *response = (EspNowChallengeResponseV1 *)decrypted_data.get();
-      message.challenge = response->challenge;
-      got_challange = true;
-      log("Got valid challenge response.", ESP_LOG_INFO);
+      auto id = decrypted_data.get()[0];
+      switch (id) {
+      case MESSAGE_ID_CHALLENGE_RESPONSE_V1: {
+        log("Got challenge response.", ESP_LOG_INFO);
+        EspNowChallengeResponseV1 *response = (EspNowChallengeResponseV1 *)decrypted_data.get();
+        message.challenge = response->challenge;
+        got_challange = true;
+        break;
+      }
+      case MESSAGE_ID_CHALLENGE_UPDATE_RESPONSE_V1: {
+        log("Got challenge update firmware response.", ESP_LOG_INFO);
+        EspNowChallengeDownloadResponseV1 *message = (EspNowChallengeDownloadResponseV1 *)decrypted_data.get();
+        // Hosts wants us to update firmware. Lets do it.
+        // handleFirmwareUpdate will never return.
+        handleFirmwareUpdate(message->wifi_ssid, message->wifi_password, message->url, message->port);
+        break;
+      }
+      }
+
       break;
     }
   }
@@ -288,4 +306,74 @@ void EspNowNode::log(const String message, const esp_log_level_t log_level) {
   if (_on_log) {
     _on_log(message, log_level);
   }
+}
+
+void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, uint16_t port) {
+  // Stop ESP-NOW first.
+  esp_now_deinit();
+
+  // Connect to wifi.
+  WiFi.begin(wifi_ssid, wifi_password);
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    log("Connection to WiFi failed!", ESP_LOG_ERROR);
+    delay(1000);
+    ESP.restart();
+  }
+
+  bool success = false;
+
+  // Ok we have WiFi.
+  // Download file.
+  HTTPClient http;
+  http.begin(url, port);
+  auto http_code = http.GET();
+  if (http_code >= 200 && http_code <= 299) {
+
+    // get length of document (is -1 when Server sends no Content-Length header)
+    int len = http.getSize();
+    log("Firmware file size: " + (len > -1 ? String(len) : "Unknown"), ESP_LOG_INFO);
+    if (!Update.begin(len > 0 ? len : UPDATE_SIZE_UNKNOWN, U_FLASH)) {
+      log("Failed to begin update: " + String(Update.errorString()), ESP_LOG_ERROR);
+    } else {
+      uint8_t buff[4096] = {0};
+      WiFiClient *stream = http.getStreamPtr();
+
+      while (http.connected() && (len > 0 || len == -1)) {
+        // get available data size
+        size_t size = stream->available();
+
+        if (size) {
+          // read up to buffer size.
+          int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
+
+          if (Update.write(buff, c) != c) {
+            log("Failed to write part of firmware: " + String(Update.errorString()), ESP_LOG_ERROR);
+            break;
+          }
+
+          if (len > 0) {
+            len -= c;
+          }
+        }
+        delay(1);
+      }
+
+      success = Update.end(true);
+      if (!success) {
+        log("Failed to end firmware upate: " + String(Update.errorString()), ESP_LOG_ERROR);
+      }
+    }
+  } else {
+    log("Failed to open URL " + String(url) + " on port " + String(port) + ", http code: " + String(http_code),
+        ESP_LOG_ERROR);
+  }
+  http.end();
+
+  if (success) {
+    log("Firwmare update successful. Rebooting.", ESP_LOG_INFO);
+  } else {
+    log("Firwmare update failed. Rebooting.", ESP_LOG_ERROR);
+  }
+  delay(1000);
+  ESP.restart();
 }

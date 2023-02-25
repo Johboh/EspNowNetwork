@@ -91,7 +91,17 @@ private:
    */
   std::unique_ptr<uint8_t[]> sendAndWait(uint8_t *message, size_t length, uint8_t *out_mac_addr = nullptr);
 
+  /**
+   * @brief Log if log callback is available.
+   */
   void log(const String message, const esp_log_level_t log_level);
+
+  /**
+   * @brief Connects to WiFi and download new firmware.
+   *
+   * Will never return. Will restart on success or on failure.
+   */
+  void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, uint16_t port);
 
 private:
   OnLog _on_log;

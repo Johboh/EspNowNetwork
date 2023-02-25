@@ -10,6 +10,7 @@
 
 #define MESSAGE_ID_CHALLENGE_REQUEST_V1 0xDA
 #define MESSAGE_ID_CHALLENGE_RESPONSE_V1 0xDB
+#define MESSAGE_ID_CHALLENGE_UPDATE_RESPONSE_V1 0xDC
 
 #pragma pack(1)
 
@@ -51,6 +52,17 @@ struct EspNowChallengeRequestV1 {
 struct EspNowChallengeResponseV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_RESPONSE_V1;
   uint32_t challenge; // Should be set in [EspNowMessageHeaderV1].
+};
+
+/**
+ * Sent by host in reply to a [EspNowChallengeRequestV1] when the device should update its firmware.
+ */
+struct EspNowChallengeDownloadResponseV1 {
+  uint8_t id = MESSAGE_ID_CHALLENGE_UPDATE_RESPONSE_V1;
+  char wifi_ssid[32];
+  char wifi_password[64];
+  char url[96];       // url to firmware binary. Note the max file path.
+  uint16_t port = 80; // HTTP port to use.
 };
 
 #pragma pack(0)
