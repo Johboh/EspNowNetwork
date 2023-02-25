@@ -39,11 +39,11 @@ bool EspNowHost::setup() {
   esp_err_t r = esp_now_init();
   if (r != 0) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("Error initializing ESP-NOW: " + String(errstr), ESP_LOG_ERROR);
+    log("Error initializing ESP-NOW: " + String(errstr), ESP_LOG_ERROR);
     delay(5000);
     ESP.restart();
   } else {
-    _on_log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
+    log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
   }
 
   esp_wifi_config_espnow_rate(WIFI_IF_AP, WIFI_PHY_RATE_LORA_250K);
@@ -51,7 +51,7 @@ bool EspNowHost::setup() {
   r = esp_now_register_recv_cb(esp_now_on_data_callback);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("Registering receive callback for ESP-NOW failed: " + String(errstr), ESP_LOG_ERROR);
+    log("Registering receive callback for ESP-NOW failed: " + String(errstr), ESP_LOG_ERROR);
   }
 
   return r == ESP_OK;
@@ -62,14 +62,16 @@ void EspNowHost::handle() {
   auto result = xQueueReceive(_receive_queue, &element, 1); // Only wait one tick.
   if (result == pdPASS) {
     // We have a new message!
-    _on_new_message(); // Notify.
+    if (_on_new_message) {
+      _on_new_message(); // Notify.
+    }
 
     auto decrypted_data = _crypt.decryptMessage(element.data);
     if (decrypted_data != nullptr) {
       handleQueuedMessage(element.mac_addr, decrypted_data.get());
     } else {
       uint64_t mac_address = macToMac(element.mac_addr);
-      _on_log("Failed to decrypt message received from 0x" + String(mac_address, HEX), ESP_LOG_WARN);
+      log("Failed to decrypt message received from 0x" + String(mac_address, HEX), ESP_LOG_WARN);
     }
   }
 }
@@ -93,35 +95,37 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
         metadata.retries = message->retries;
         auto outer_message_size = sizeof(Message);
         const uint8_t *inner_message = data + outer_message_size;
-        _on_application_message(metadata, inner_message);
+        if (_on_application_message) {
+          _on_application_message(metadata, inner_message);
+        }
       } else {
-        _on_log("Challenge mismatch (expected: " + String(expected_challenge) + ", got: " + String(message->challenge) +
-                    ") for 0x" + String(mac_address, HEX),
-                ESP_LOG_WARN);
+        log("Challenge mismatch (expected: " + String(expected_challenge) + ", got: " + String(message->challenge) +
+                ") for 0x" + String(mac_address, HEX),
+            ESP_LOG_WARN);
       }
       // Remove previous challenge (even on mismatch to prevent brute force)
       _challenges.erase(mac_address);
     } else {
-      _on_log("No challenge registered for 0x" + String(mac_address, HEX), ESP_LOG_WARN);
+      log("No challenge registered for 0x" + String(mac_address, HEX), ESP_LOG_WARN);
     }
 
     break;
   }
   case MESSAGE_ID_DISCOVERY_REQUEST_V1: {
-    _on_log("Got discovery request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
+    log("Got discovery request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
     handleDiscoveryRequest(mac_addr);
     break;
   }
   case MESSAGE_ID_CHALLENGE_REQUEST_V1: {
-    _on_log("Got challenge request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
+    log("Got challenge request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
     handleChallengeRequest(mac_addr);
     break;
   }
 
   default:
-    _on_log("Received message with unknown id from device with MAC address 0x" + String(mac_address, HEX) +
-                ". Got id: 0x" + String(id, HEX),
-            ESP_LOG_WARN);
+    log("Received message with unknown id from device with MAC address 0x" + String(mac_address, HEX) + ". Got id: 0x" +
+            String(id, HEX),
+        ESP_LOG_WARN);
     break;
   }
 }
@@ -164,26 +168,32 @@ void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, si
   esp_err_t r = esp_now_add_peer(&peer_info);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("esp_now_add_peer failure: " + String(errstr), ESP_LOG_ERROR);
+    log("esp_now_add_peer failure: " + String(errstr), ESP_LOG_ERROR);
   }
 
   r = _crypt.sendMessage(mac_addr, message, length);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
+    log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
   } else {
-    _on_log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
+    log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
   }
 
   // We are done with the peer.
   r = esp_now_del_peer(mac_addr);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("esp_now_del_peer failure: " + String(errstr), ESP_LOG_ERROR);
+    log("esp_now_del_peer failure: " + String(errstr), ESP_LOG_ERROR);
   }
 }
 
 uint64_t EspNowHost::macToMac(uint8_t *mac_addr) {
   return ((uint64_t)mac_addr[0] << 40) + ((uint64_t)mac_addr[1] << 32) + ((uint64_t)mac_addr[2] << 24) +
          ((uint64_t)mac_addr[3] << 16) + ((uint64_t)mac_addr[4] << 8) + ((uint64_t)mac_addr[5]);
+}
+
+void EspNowHost ::log(const String message, const esp_log_level_t log_level) {
+  if (_on_log) {
+    _on_log(message, log_level);
+  }
 }

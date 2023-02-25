@@ -66,7 +66,7 @@ EspNowNode::EspNowNode(EspNowCrypt &crypt, OnLog on_log) : _crypt(crypt), _on_lo
 
 bool EspNowNode::setup() {
   if (_setup_successful) {
-    _on_log("Already have successful setup.", ESP_LOG_WARN);
+    log("Already have successful setup.", ESP_LOG_WARN);
     return true;
   }
 
@@ -81,23 +81,23 @@ bool EspNowNode::setup() {
   esp_err_t r = esp_now_init();
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("Error initializing ESP-NOW: " + String(errstr), ESP_LOG_ERROR);
+    log("Error initializing ESP-NOW: " + String(errstr), ESP_LOG_ERROR);
     delay(5000);
     ESP.restart();
   } else {
-    _on_log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
+    log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
   }
 
   r = esp_now_register_send_cb(esp_now_on_data_sent);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("Registering send callback for esp now failed: " + String(errstr), ESP_LOG_ERROR);
+    log("Registering send callback for esp now failed: " + String(errstr), ESP_LOG_ERROR);
   }
 
   r = esp_now_register_recv_cb(esp_now_on_data_callback);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("Registering receive callback for esp now failed: " + String(errstr), ESP_LOG_ERROR);
+    log("Registering receive callback for esp now failed: " + String(errstr), ESP_LOG_ERROR);
   }
 
   esp_now_peer_info_t peer_info;
@@ -114,10 +114,10 @@ bool EspNowNode::setup() {
   bool presumably_valid_host_mac_address = _preferences.getBool(PREF_KEY_HAVE_MAC) &&
                                            _preferences.getBytesLength(PREF_KEY_HOST_MAC_ADDRESS) == ESP_NOW_ETH_ALEN;
   if (presumably_valid_host_mac_address) {
-    _on_log("Presumably valid MAC address loaded.", ESP_LOG_INFO);
+    log("Presumably valid MAC address loaded.", ESP_LOG_INFO);
     _preferences.getBytes(PREF_KEY_HOST_MAC_ADDRESS, _esp_now_host_address, ESP_NOW_ETH_ALEN);
   } else {
-    _on_log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
+    log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
     memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
   }
   memcpy(peer_info.peer_addr, _esp_now_host_address, ESP_NOW_ETH_ALEN);
@@ -126,7 +126,7 @@ bool EspNowNode::setup() {
   bool success = r == ESP_OK;
   if (!success) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("Per adding failure: " + String(errstr), ESP_LOG_ERROR);
+    log("Per adding failure: " + String(errstr), ESP_LOG_ERROR);
   }
 
   if (!presumably_valid_host_mac_address) {
@@ -140,9 +140,8 @@ bool EspNowNode::setup() {
       bool confirmed = false;
       uint8_t mac_addr[ESP_NOW_ETH_ALEN];
       EspNowDiscoveryRequestV1 message;
-      _on_log("Sending broadcast discovery request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - retries - 1) +
-                  ")",
-              ESP_LOG_INFO);
+      log("Sending broadcast discovery request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - retries - 1) + ")",
+          ESP_LOG_INFO);
       auto decrypted_data = sendAndWait((uint8_t *)&message, sizeof(EspNowDiscoveryRequestV1), mac_addr);
       if (decrypted_data != nullptr) {
         EspNowDiscoveryResponseV1 *message = (EspNowDiscoveryResponseV1 *)decrypted_data.get();
@@ -150,7 +149,7 @@ bool EspNowNode::setup() {
       }
 
       if (confirmed) {
-        _on_log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
+        log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
         _preferences.putBool(PREF_KEY_HAVE_MAC, true);
         _preferences.putBytes(PREF_KEY_HOST_MAC_ADDRESS, mac_addr, ESP_NOW_ETH_ALEN);
         _preferences.end();
@@ -159,7 +158,7 @@ bool EspNowNode::setup() {
 
       // No message/timeout or failed to verify. Try again.
     }
-    _on_log("Failed to discover host. Setup failed.", ESP_LOG_ERROR);
+    log("Failed to discover host. Setup failed.", ESP_LOG_ERROR);
 
     // So we never got a message after several retries.
     // Let caller now this.
@@ -183,23 +182,22 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   int8_t challenge_retries = NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST;
   while (challenge_retries-- > 0) {
     EspNowChallengeRequestV1 request;
-    _on_log("Sending challenge request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - challenge_retries - 1) +
-                ").",
-            ESP_LOG_INFO);
+    log("Sending challenge request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - challenge_retries - 1) + ").",
+        ESP_LOG_INFO);
     auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowChallengeRequestV1));
     if (decrypted_data != nullptr) {
       EspNowChallengeResponseV1 *response = (EspNowChallengeResponseV1 *)decrypted_data.get();
       message.challenge = response->challenge;
       got_challange = true;
-      _on_log("Got valid challenge response.", ESP_LOG_INFO);
+      log("Got valid challenge response.", ESP_LOG_INFO);
       break;
     }
   }
 
   if (!got_challange) {
-    _on_log("Failed to receive challenge response. Assuming invalid host MAC address. Clearing stored MAC address and "
-            "restarting.",
-            ESP_LOG_ERROR);
+    log("Failed to receive challenge response. Assuming invalid host MAC address. Clearing stored MAC address and "
+        "restarting.",
+        ESP_LOG_ERROR);
     // Sad times. We have no challenge. No point in continuing.
     // Assume host is broken.
     forgetHost();
@@ -214,7 +212,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   memcpy(buff.get() + sizeof(Message), sub_message, sub_message_size);
 
   uint16_t attempt = 0;
-  _on_log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
+  log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
   sendMessageInternal(buff.get(), size);
 
   // If negative retries, don't wait.
@@ -227,11 +225,11 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
     auto bits = xEventGroupWaitBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT, pdTRUE, pdFALSE,
                                     TICKS_TO_WAIT_FOR_EVENT);
     if ((bits & SEND_SUCCESS_BIT) != 0) {
-      _on_log("Message successfully delivered to host", ESP_LOG_DEBUG);
+      log("Message successfully delivered to host", ESP_LOG_DEBUG);
       success = true;
       break;
     } else {
-      _on_log("Message failed to be delivered to host. Check host address. Will retry.", ESP_LOG_ERROR);
+      log("Message failed to be delivered to host. Check host address. Will retry.", ESP_LOG_ERROR);
       // This is either a send fail bit set, or no bit set.
       // If no bit is set then its either a timeout from xEventGroupWaitBits or
       // something else. A timeout will almost never happen probably, as esp-now
@@ -239,7 +237,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
       delay(attempt * 5); // Backoff
       message.retries = attempt;
       memcpy(buff.get(), &message, sizeof(Message)); // "Refresh" message in buffer.
-      _on_log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
+      log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
       sendMessageInternal(buff.get(), size);
       continue;
     }
@@ -247,7 +245,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
 
   if (!success && attempt >= retries) {
     // Failed to get ACK on message. We have a valid host as we got challenge response above.
-    _on_log("Failed to send message after retries.", ESP_LOG_ERROR);
+    log("Failed to send message after retries.", ESP_LOG_ERROR);
     return false;
   }
 
@@ -265,9 +263,9 @@ void EspNowNode::sendMessageInternal(uint8_t *buff, size_t length) {
   esp_err_t r = _crypt.sendMessage(_esp_now_host_address, buff, length);
   if (r != ESP_OK) {
     const char *errstr = esp_err_to_name(r);
-    _on_log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
+    log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
   } else {
-    _on_log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
+    log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
   }
 }
 
@@ -284,4 +282,10 @@ std::unique_ptr<uint8_t[]> EspNowNode::sendAndWait(uint8_t *message, size_t leng
     return _crypt.decryptMessage(element.data);
   }
   return nullptr;
+}
+
+void EspNowNode::log(const String message, const esp_log_level_t log_level) {
+  if (_on_log) {
+    _on_log(message, log_level);
+  }
 }

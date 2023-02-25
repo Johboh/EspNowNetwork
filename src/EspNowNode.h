@@ -91,6 +91,8 @@ private:
    */
   std::unique_ptr<uint8_t[]> sendAndWait(uint8_t *message, size_t length, uint8_t *out_mac_addr = nullptr);
 
+  void log(const String message, const esp_log_level_t log_level);
+
 private:
   OnLog _on_log;
   EspNowCrypt &_crypt;

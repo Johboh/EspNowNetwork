@@ -85,6 +85,8 @@ private:
 
   uint64_t macToMac(uint8_t *mac_addr);
 
+  void log(const String message, const esp_log_level_t log_level);
+
 private:
   EspNowCrypt &_crypt;
   // Map from MAC address to challenge.
