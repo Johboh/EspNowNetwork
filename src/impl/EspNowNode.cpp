@@ -140,7 +140,9 @@ bool EspNowNode::setup() {
       bool confirmed = false;
       uint8_t mac_addr[ESP_NOW_ETH_ALEN];
       EspNowDiscoveryRequestV1 message;
-      _on_log("Sending broadcast discovery request", ESP_LOG_INFO);
+      _on_log("Sending broadcast discovery request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - retries - 1) +
+                  ")",
+              ESP_LOG_INFO);
       auto decrypted_data = sendAndWait((uint8_t *)&message, sizeof(EspNowDiscoveryRequestV1), mac_addr);
       if (decrypted_data != nullptr) {
         EspNowDiscoveryResponseV1 *message = (EspNowDiscoveryResponseV1 *)decrypted_data.get();
@@ -181,7 +183,9 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   int8_t challenge_retries = NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST;
   while (challenge_retries-- > 0) {
     EspNowChallengeRequestV1 request;
-    _on_log("Sending challenge request.", ESP_LOG_INFO);
+    _on_log("Sending challenge request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - challenge_retries - 1) +
+                ").",
+            ESP_LOG_INFO);
     auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowChallengeRequestV1));
     if (decrypted_data != nullptr) {
       EspNowChallengeResponseV1 *response = (EspNowChallengeResponseV1 *)decrypted_data.get();
