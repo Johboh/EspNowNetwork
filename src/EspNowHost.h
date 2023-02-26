@@ -57,7 +57,6 @@ public:
     char wifi_ssid[32];     // WiFi SSID that node should connect to.
     char wifi_password[64]; // WiFi password that the node should connect to.
     char url[96];           // url where to find firmware binary. Note the max file path.
-    uint16_t port = 80;     // HTTP port to use.
   };
 
   /**

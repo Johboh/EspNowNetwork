@@ -118,8 +118,10 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
   }
   case MESSAGE_ID_CHALLENGE_REQUEST_V1: {
     EspNowChallengeRequestV1 *message = (EspNowChallengeRequestV1 *)data;
-    log("Got challenge request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
-    handleChallengeRequest(mac_addr, message->firmware_version);
+    auto firmware_version = message->firmware_version;
+    log("Got challenge request from 0x" + String(mac_address, HEX) + ", firmware version: " + String(firmware_version),
+        ESP_LOG_INFO);
+    handleChallengeRequest(mac_addr, firmware_version);
     break;
   }
 
@@ -143,13 +145,11 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_ver
   if (_firwmare_update) {
     auto metadata = _firwmare_update(mac_address, firmware_version);
     if (metadata) {
-      log("Sending firmware update response to 0x" + String(mac_address), ESP_LOG_INFO);
+      log("Sending firmware update response to 0x" + String(mac_address, HEX), ESP_LOG_INFO);
       EspNowChallengeDownloadResponseV1 message;
-      memcpy(message.wifi_ssid, metadata->wifi_ssid, min(sizeof(message.wifi_ssid), sizeof(metadata->wifi_ssid)));
-      memcpy(message.wifi_password, metadata->wifi_password,
-             min(sizeof(message.wifi_password), sizeof(metadata->wifi_password)));
-      memcpy(message.url, metadata->url, min(sizeof(message.url), sizeof(metadata->url)));
-      message.port = metadata->port;
+      strncpy(message.wifi_ssid, metadata->wifi_ssid, sizeof(message.wifi_ssid));
+      strncpy(message.wifi_password, metadata->wifi_password, sizeof(message.wifi_password));
+      strncpy(message.url, metadata->url, sizeof(message.url));
       sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeDownloadResponseV1));
       return;
     }

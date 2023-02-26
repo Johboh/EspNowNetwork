@@ -102,7 +102,7 @@ private:
    *
    * Will never return. Will restart on success or on failure.
    */
-  void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, uint16_t port);
+  void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url);
 
 private:
   OnLog _on_log;

@@ -66,7 +66,7 @@ void esp_now_on_data_callback(const uint8_t *mac_addr, const uint8_t *data, int 
 }
 
 EspNowNode::EspNowNode(EspNowCrypt &crypt, uint32_t firmware_version, OnLog on_log)
-    : _on_log(on_log), _crypt(crypt), _firmware_version(_firmware_version) {}
+    : _on_log(on_log), _crypt(crypt), _firmware_version(firmware_version) {}
 
 bool EspNowNode::setup() {
   if (_setup_successful) {
@@ -205,7 +205,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
         EspNowChallengeDownloadResponseV1 *message = (EspNowChallengeDownloadResponseV1 *)decrypted_data.get();
         // Hosts wants us to update firmware. Lets do it.
         // handleFirmwareUpdate will never return.
-        handleFirmwareUpdate(message->wifi_ssid, message->wifi_password, message->url, message->port);
+        handleFirmwareUpdate(message->wifi_ssid, message->wifi_password, message->url);
         break;
       }
       }
@@ -310,7 +310,7 @@ void EspNowNode::log(const String message, const esp_log_level_t log_level) {
   }
 }
 
-void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, uint16_t port) {
+void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url) {
   // Stop ESP-NOW first.
   esp_now_deinit();
 
@@ -327,7 +327,7 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   // Ok we have WiFi.
   // Download file.
   HTTPClient http;
-  http.begin(url, port);
+  http.begin(url);
   auto http_code = http.GET();
   if (http_code >= 200 && http_code <= 299) {
 
@@ -352,6 +352,7 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
             log("Failed to write part of firmware: " + String(Update.errorString()), ESP_LOG_ERROR);
             break;
           }
+          log("Wrote " + String(c) + " bytes", ESP_LOG_INFO);
 
           if (len > 0) {
             len -= c;
@@ -366,8 +367,7 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
       }
     }
   } else {
-    log("Failed to open URL " + String(url) + " on port " + String(port) + ", http code: " + String(http_code),
-        ESP_LOG_ERROR);
+    log("Failed to open URL " + String(url) + ", http code: " + String(http_code), ESP_LOG_ERROR);
   }
   http.end();
 
