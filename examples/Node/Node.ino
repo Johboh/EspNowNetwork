@@ -4,6 +4,8 @@
 
 #define SLEEP_TIME_US (1000LL * 1000LL * 60LL * 1LL) // 1 minute
 
+#define FIRMWARE_VERSION 90201
+
 // These structs are the application messages shared across the host and node device.
 #pragma pack(1)
 struct MyApplicationMessage {
@@ -27,8 +29,7 @@ const char esp_now_encryption_secret[] = "01234567"; // Must be exact 8 bytes lo
 
 unsigned long _turn_of_led_at_ms = 0;
 
-EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
-EspNowNode _esp_now_node(_esp_now_crypt, [](const String message, const esp_log_level_t log_level) {
+EspNowNode::OnLog _on_log = [](const String message, const esp_log_level_t log_level) {
   // Callback for logging. Can be omitted.
   if (log_level == ESP_LOG_NONE) {
     return; // Weird flex, but ok
@@ -60,7 +61,10 @@ EspNowNode _esp_now_node(_esp_now_crypt, [](const String message, const esp_log_
   }
 
   Serial.println("EspNowNode (" + level + "): " + message);
-});
+};
+
+EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
+EspNowNode _esp_now_node(_esp_now_crypt, FIRMWARE_VERSION, _on_log);
 
 void setup() {
   Serial.begin(115200);

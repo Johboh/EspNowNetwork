@@ -37,64 +37,72 @@ const char esp_now_encryption_secret[] = "01234567"; // Must be exact 8 bytes lo
 
 unsigned long _turn_of_led_at_ms = 0;
 
+EspNowHost::OnNewMessage _on_new_message = []() {
+  // Callback on any new message. Turn on led to indicate this.
+  digitalWrite(LED_PIN, HIGH);
+  _turn_of_led_at_ms = millis() + 1000;
+};
+
+EspNowHost::OnApplicationMessage _on_application_message = [](EspNowHost::MessageMetadata metadata,
+                                                              const uint8_t *message) {
+  // Callback for new application messages.
+  auto id = message[0];
+  Serial.println("Got message from 0x" + String(metadata.mac_address) + " with ID " + id);
+  switch (id) {
+  case 0x01: {
+    MyApplicationMessage *msg = (MyApplicationMessage *)message;
+    Serial.println("MyApplicationMessage::open: " + String(msg->open));
+    break;
+  }
+  case 0x02: {
+    MySecondApplicationMessage *msg = (MySecondApplicationMessage *)message;
+    Serial.println("MyApplicationMessage::temperature: " + String(msg->temperature));
+    break;
+  }
+  }
+};
+
+EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac_address, uint32_t firmware_version) {
+  // Callback where we can indicate if there is a new firmware available.
+  return std::nullopt;
+};
+
+EspNowHost::OnLog _on_log = [](const String message, const esp_log_level_t log_level) {
+  // Callback for logging. Can be omitted.
+  if (log_level == ESP_LOG_NONE) {
+    return; // Weird flex, but ok
+  }
+
+  String level;
+  switch (log_level) {
+  case ESP_LOG_NONE:
+    level = "none";
+    break;
+  case ESP_LOG_ERROR:
+    level = "error";
+    break;
+  case ESP_LOG_WARN:
+    level = "warning";
+    break;
+  case ESP_LOG_INFO:
+    level = "info";
+    break;
+  case ESP_LOG_DEBUG:
+    level = "debug";
+    break;
+  case ESP_LOG_VERBOSE:
+    level = "verbose";
+    break;
+  default:
+    level = "unknown";
+    break;
+  }
+
+  Serial.println("EspNowHost (" + level + "): " + message);
+};
+
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
-EspNowHost _esp_now_host(
-    _esp_now_crypt,
-    []() {
-      // Callback on any new message. Turn on led to indicate this.
-      digitalWrite(LED_PIN, HIGH);
-      _turn_of_led_at_ms = millis() + 1000;
-    },
-    [](EspNowHost::MessageMetadata metadata, const uint8_t *message) {
-      // Callback for new application messages.
-      auto id = message[0];
-      Serial.println("Got message from 0x" + String(metadata.mac_address) + " with ID " + id);
-      switch (id) {
-      case 0x01: {
-        MyApplicationMessage *msg = (MyApplicationMessage *)message;
-        Serial.println("MyApplicationMessage::open: " + String(msg->open));
-        break;
-      }
-      case 0x02: {
-        MySecondApplicationMessage *msg = (MySecondApplicationMessage *)message;
-        Serial.println("MyApplicationMessage::temperature: " + String(msg->temperature));
-        break;
-      }
-      }
-    },
-    [](const String message, const esp_log_level_t log_level) {
-      // Callback for logging. Can be omitted.
-      if (log_level == ESP_LOG_NONE) {
-        return; // Weird flex, but ok
-      }
-
-      String level;
-      switch (log_level) {
-      case ESP_LOG_NONE:
-        level = "none";
-        break;
-      case ESP_LOG_ERROR:
-        level = "error";
-        break;
-      case ESP_LOG_WARN:
-        level = "warning";
-        break;
-      case ESP_LOG_INFO:
-        level = "info";
-        break;
-      case ESP_LOG_DEBUG:
-        level = "debug";
-        break;
-      case ESP_LOG_VERBOSE:
-        level = "verbose";
-        break;
-      default:
-        level = "unknown";
-        break;
-      }
-
-      Serial.println("EspNowHost (" + level + "): " + message);
-    });
+EspNowHost _esp_now_host(_esp_now_crypt, _on_new_message, _on_application_message, _firmware_update_available, _on_log);
 
 void setup() {
   Serial.begin(115200);
