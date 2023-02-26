@@ -11,16 +11,16 @@
 #define SEND_SUCCESS_BIT 0x01
 #define SEND_FAIL_BIT 0x02
 
-// 500ms is a long time in the esp-now world. Used for both send and receive.
-#define TICKS_TO_WAIT_FOR_EVENT (500 / portTICK_PERIOD_MS)
+// 100ms is a long time in the esp-now world. Used for both send and receive.
+#define TICKS_TO_WAIT_FOR_EVENT (100 / portTICK_PERIOD_MS)
 
 // Number of tries to resend the disovery message. Will wait for reply as long as defined by TICKS_TO_WAIT_FOR_EVENT
 // between each message.
-#define NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST 10
+#define NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST 20
 
 // Number of times to try requesting a challenge. Will wait for reply as long as defined by TICKS_TO_WAIT_FOR_EVENT
 // between each message.
-#define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 10
+#define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 20
 
 // Keys for Preferences
 #define PREF_KEY_HAVE_MAC "have-mac"
@@ -233,6 +233,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
 
   uint16_t attempt = 0;
   log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
+  xEventGroupClearBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT);
   sendMessageInternal(buff.get(), size);
 
   // If negative retries, don't wait.
@@ -258,6 +259,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
       message.retries = attempt;
       memcpy(buff.get(), &message, sizeof(Message)); // "Refresh" message in buffer.
       log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
+      xEventGroupClearBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT);
       sendMessageInternal(buff.get(), size);
       continue;
     }
@@ -290,6 +292,7 @@ void EspNowNode::sendMessageInternal(uint8_t *buff, size_t length) {
 }
 
 std::unique_ptr<uint8_t[]> EspNowNode::sendAndWait(uint8_t *message, size_t length, uint8_t *out_mac_addr) {
+  xQueueReset(_receive_queue);
   sendMessageInternal(message, length);
 
   // Wait for reply (with timeout)

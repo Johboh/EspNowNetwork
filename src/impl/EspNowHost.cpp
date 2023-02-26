@@ -210,7 +210,7 @@ uint64_t EspNowHost::macToMac(uint8_t *mac_addr) {
          ((uint64_t)mac_addr[3] << 16) + ((uint64_t)mac_addr[4] << 8) + ((uint64_t)mac_addr[5]);
 }
 
-void EspNowHost ::log(const String message, const esp_log_level_t log_level) {
+void EspNowHost::log(const String message, const esp_log_level_t log_level) {
   if (_on_log) {
     _on_log(message, log_level);
   }
