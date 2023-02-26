@@ -117,8 +117,9 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
     break;
   }
   case MESSAGE_ID_CHALLENGE_REQUEST_V1: {
+    EspNowChallengeRequestV1 *message = (EspNowChallengeRequestV1 *)data;
     log("Got challenge request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
-    handleChallengeRequest(mac_addr);
+    handleChallengeRequest(mac_addr, message->firmware_version);
     break;
   }
 
@@ -135,12 +136,12 @@ void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr) {
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowDiscoveryResponseV1));
 }
 
-void EspNowHost::handleChallengeRequest(uint8_t *mac_addr) {
+void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_version) {
   uint64_t mac_address = macToMac(mac_addr);
 
   // Any firmware to update?
   if (_firwmare_update) {
-    auto metadata = _firwmare_update(mac_address);
+    auto metadata = _firwmare_update(mac_address, firmware_version);
     if (metadata) {
       log("Sending firmware update response to 0x" + String(mac_address), ESP_LOG_INFO);
       EspNowChallengeDownloadResponseV1 message;

@@ -64,9 +64,12 @@ public:
    * @brief Callback that if returning a [FirmwareUpdate], will tell host to upgrade its firmware given the metadata in
    * [FirmwareUpdate].
    *
+   * @param mac_address the MAC address of the node.
+   * @param firmware_version firmware version as reported by the node.
    * return std::nullopt if there is no firmware update available for the given mac_address
    */
-  typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address)> FirmwareUpdateAvailable;
+  typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address, uint32_t firmware_version)>
+      FirmwareUpdateAvailable;
 
 public:
   /**
@@ -76,7 +79,10 @@ public:
    * @param on_new_message callback on any new message received, regardless of type, validation, decrypted correctly
    * etc. Intended for turning on led or similar to indicate new package.
    * @param on_application_message callback when there is a verified, decrypted application message received.
-   * @param firwmare_update callback to check if a firmware update is available.
+   * @param firwmare_update callback to check if a firmware update is available. Please note that this function will be
+   * called on every challenge request sent by the node, so this function must return fast and not perform any heavy
+   * computation or network. This function should preferably just do a lookup in a lookup table to check if a given node
+   * and its firmware version have new firmware.
    * @param on_log callback when the host want to log something.
    */
   EspNowHost(EspNowCrypt &crypt, OnNewMessage on_new_message, OnApplicationMessage on_application_message,
@@ -96,7 +102,7 @@ public:
 private:
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
   void handleDiscoveryRequest(uint8_t *mac_addr);
-  void handleChallengeRequest(uint8_t *mac_addr);
+  void handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_version);
 
   void sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length);
 
