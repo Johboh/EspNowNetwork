@@ -65,7 +65,8 @@ void esp_now_on_data_callback(const uint8_t *mac_addr, const uint8_t *data, int 
   }
 }
 
-EspNowNode::EspNowNode(EspNowCrypt &crypt, OnLog on_log) : _crypt(crypt), _on_log(on_log) {}
+EspNowNode::EspNowNode(EspNowCrypt &crypt, uint32_t firmware_version, OnLog on_log)
+    : _on_log(on_log), _crypt(crypt), _firmware_version(_firmware_version) {}
 
 bool EspNowNode::setup() {
   if (_setup_successful) {
@@ -185,6 +186,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   int8_t challenge_retries = NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST;
   while (challenge_retries-- > 0) {
     EspNowChallengeRequestV1 request;
+    request.firmware_version = _firmware_version;
     log("Sending challenge request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - challenge_retries - 1) + ").",
         ESP_LOG_INFO);
     auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowChallengeRequestV1));

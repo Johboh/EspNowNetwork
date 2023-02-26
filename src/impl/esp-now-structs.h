@@ -43,6 +43,7 @@ struct EspNowDiscoveryResponseV1 {
  */
 struct EspNowChallengeRequestV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_REQUEST_V1;
+  uint32_t firmware_version;
 };
 
 /**

@@ -39,9 +39,10 @@ public:
    * @brief Construct a new EspNowNode.
    *
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
+   * @param firmware_version the (incremental) firmware version that this node is currently running.
    * @param on_log callback when the host want to log something.
    */
-  EspNowNode(EspNowCrypt &crypt, OnLog on_log = {});
+  EspNowNode(EspNowCrypt &crypt, uint32_t firmware_version, OnLog on_log = {});
 
 public:
   /**
@@ -107,6 +108,7 @@ private:
   OnLog _on_log;
   EspNowCrypt &_crypt;
   Preferences _preferences;
+  uint32_t _firmware_version;
   bool _setup_successful = false;
   uint8_t _esp_now_host_address[6];
 };
