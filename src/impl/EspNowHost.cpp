@@ -147,7 +147,7 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
     break;
   }
   case MESSAGE_ID_DISCOVERY_REQUEST_V1: {
-    log("Got discovery request from 0x" + String(mac_address, HEX), ESP_LOG_INFO);
+    log("Got discovery request from 0x" + String(mac_address, HEX) + " and sending reply.", ESP_LOG_INFO);
     handleDiscoveryRequest(mac_addr);
     break;
   }
@@ -206,6 +206,8 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_ver
     message.challenge = esp_random();
     _challenges[mac_address] = message.challenge;
   }
+  log("Sending challenge response to 0x" + String(mac_address, HEX) + " with challenge " + String(message.challenge),
+      ESP_LOG_INFO);
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeResponseV1));
 }
 
