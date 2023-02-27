@@ -11,16 +11,16 @@
 #define SEND_SUCCESS_BIT 0x01
 #define SEND_FAIL_BIT 0x02
 
-// 100ms is a long time in the esp-now world. Used for both send and receive.
-#define TICKS_TO_WAIT_FOR_EVENT (100 / portTICK_PERIOD_MS)
+#define TICKS_TO_WAIT_FOR_MESSAGE (100 / portTICK_PERIOD_MS) // 100ms
+#define TICKS_TO_WAIT_FOR_ACK (100 / portTICK_PERIOD_MS)     // 100ms
 
-// Number of tries to resend the disovery message. Will wait for reply as long as defined by TICKS_TO_WAIT_FOR_EVENT
+// Number of tries to resend the disovery message. Will wait for reply as long as defined by TICKS_TO_WAIT_FOR_MESSAGE
 // between each message.
-#define NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST 20
+#define NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST 50
 
-// Number of times to try requesting a challenge. Will wait for reply as long as defined by TICKS_TO_WAIT_FOR_EVENT
+// Number of times to try requesting a challenge. Will wait for reply as long as defined by TICKS_TO_WAIT_FOR_MESSAGE
 // between each message.
-#define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 20
+#define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 50
 
 // Keys for Preferences
 #define PREF_KEY_HAVE_MAC "have-mac"
@@ -244,7 +244,7 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
   bool success = false;
   while (attempt++ < retries) {
     auto bits = xEventGroupWaitBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT, pdTRUE, pdFALSE,
-                                    TICKS_TO_WAIT_FOR_EVENT);
+                                    TICKS_TO_WAIT_FOR_ACK);
     if ((bits & SEND_SUCCESS_BIT) != 0) {
       log("Message successfully delivered to host", ESP_LOG_DEBUG);
       success = true;
@@ -297,7 +297,7 @@ std::unique_ptr<uint8_t[]> EspNowNode::sendAndWait(uint8_t *message, size_t leng
 
   // Wait for reply (with timeout)
   Element element;
-  auto result = xQueueReceive(_receive_queue, &element, TICKS_TO_WAIT_FOR_EVENT);
+  auto result = xQueueReceive(_receive_queue, &element, TICKS_TO_WAIT_FOR_MESSAGE);
   if (result == pdPASS) {
     if (out_mac_addr != nullptr) {
       memcpy(out_mac_addr, element.mac_addr, ESP_NOW_ETH_ALEN);
