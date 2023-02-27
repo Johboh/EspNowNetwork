@@ -5,13 +5,29 @@
 #include <esp_now.h>
 #include <esp_wifi.h>
 
+// Bits used for send ACKs to notify the _send_result_event_group Even Group.
+#define SEND_SUCCESS_BIT 0x01
+#define SEND_FAIL_BIT 0x02
+
 struct Element {
   size_t data_len = 0;
   uint8_t data[255]; // Max message size on ESP-NOW is 250.
   uint8_t mac_addr[ESP_NOW_ETH_ALEN];
 };
 
+auto _send_result_event_group = xEventGroupCreate();
 auto _receive_queue = xQueueCreate(10, sizeof(Element));
+
+void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  // Set event bits based on result.
+  auto xHigherPriorityTaskWoken = pdFALSE;
+  auto result = xEventGroupSetBitsFromISR(_send_result_event_group,
+                                          status == ESP_NOW_SEND_SUCCESS ? SEND_SUCCESS_BIT : SEND_FAIL_BIT,
+                                          &xHigherPriorityTaskWoken);
+  if (result != pdFAIL && xHigherPriorityTaskWoken == pdTRUE) {
+    portYIELD_FROM_ISR();
+  }
+}
 
 void esp_now_on_data_callback(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   // New message received on ESP-NOW.
@@ -54,6 +70,12 @@ bool EspNowHost::setup() {
     log("Registering receive callback for ESP-NOW failed: " + String(errstr), ESP_LOG_ERROR);
   }
 
+  r = esp_now_register_send_cb(esp_now_on_data_sent);
+  if (r != ESP_OK) {
+    const char *errstr = esp_err_to_name(r);
+    log("Registering send callback for esp now failed: " + String(errstr), ESP_LOG_ERROR);
+  }
+
   return r == ESP_OK;
 }
 
@@ -62,6 +84,7 @@ void EspNowHost::handle() {
   auto result = xQueueReceive(_receive_queue, &element, 1); // Only wait one tick.
   if (result == pdPASS) {
     // We have a new message!
+    ++_number_of_messages;
     if (_on_new_message) {
       _on_new_message(); // Notify.
     }
@@ -73,6 +96,14 @@ void EspNowHost::handle() {
       uint64_t mac_address = macToMac(element.mac_addr);
       log("Failed to decrypt message received from 0x" + String(mac_address, HEX), ESP_LOG_WARN);
     }
+  }
+
+  auto bits = xEventGroupWaitBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT, pdTRUE, pdFALSE, 1);
+  if ((bits & SEND_SUCCESS_BIT) != 0) {
+    log("Message delivered.", ESP_LOG_INFO);
+  }
+  if ((bits & SEND_FAIL_BIT) != 0) {
+    log("Message fail to deliver.", ESP_LOG_INFO);
   }
 }
 
@@ -87,6 +118,8 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
   case MESSAGE_ID_HEADER: {
     typedef EspNowMessageHeaderV1 Message;
     auto *message = (Message *)data;
+    log("Got application message from 0x" + String(mac_address, HEX) + " with challange: " + String(message->challenge),
+        ESP_LOG_INFO);
     // Verify challenge.
     auto challenge = _challenges.find(mac_address);
     if (challenge != _challenges.end()) {
@@ -106,7 +139,9 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
       // Remove previous challenge (even on mismatch to prevent brute force)
       _challenges.erase(mac_address);
     } else {
-      log("No challenge registered for 0x" + String(mac_address, HEX), ESP_LOG_WARN);
+      log("No challenge registered for 0x" + String(mac_address, HEX) +
+              " (challenge received: " + String(message->challenge) + ")",
+          ESP_LOG_WARN);
     }
 
     break;
@@ -194,7 +229,7 @@ void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, si
     const char *errstr = esp_err_to_name(r);
     log("_crypt.sendMessage() failure: " + String(errstr), ESP_LOG_ERROR);
   } else {
-    log("Message sent OK (not yet delivered)", ESP_LOG_DEBUG);
+    log("Message sent OK (not yet delivered)", ESP_LOG_INFO);
   }
 
   // We are done with the peer.
@@ -212,6 +247,7 @@ uint64_t EspNowHost::macToMac(uint8_t *mac_addr) {
 
 void EspNowHost::log(const String message, const esp_log_level_t log_level) {
   if (_on_log) {
-    _on_log(message, log_level);
+    String messag_with_counter = "[#" + String(_number_of_messages) + "] " + message;
+    _on_log(messag_with_counter, log_level);
   }
 }
