@@ -137,19 +137,22 @@ bool EspNowNode::setup() {
     // Ok so we have no valid host MAC address.
     // Announce our precence until we get a reply.
 
+    uint8_t mac_addr[ESP_NOW_ETH_ALEN];
+    EspNowDiscoveryRequestV1 request;
+    // The challenge we expect to get back in the disovery response.
+    request.discovery_challenge = esp_random();
+
     int8_t retries = NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST;
     while (retries-- > 0) {
-      // Send discovery message
-
+      // Send discovery request
       bool confirmed = false;
-      uint8_t mac_addr[ESP_NOW_ETH_ALEN];
-      EspNowDiscoveryRequestV1 message;
       log("Sending broadcast discovery request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - retries - 1) + ")",
           ESP_LOG_INFO);
-      auto decrypted_data = sendAndWait((uint8_t *)&message, sizeof(EspNowDiscoveryRequestV1), mac_addr);
+      auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowDiscoveryRequestV1), mac_addr);
       if (decrypted_data != nullptr) {
-        EspNowDiscoveryResponseV1 *message = (EspNowDiscoveryResponseV1 *)decrypted_data.get();
-        confirmed = message->id == MESSAGE_ID_DISCOVERY_RESPONSE_V1;
+        EspNowDiscoveryResponseV1 *response = (EspNowDiscoveryResponseV1 *)decrypted_data.get();
+        confirmed = response->id == MESSAGE_ID_DISCOVERY_RESPONSE_V1 &&
+                    response->discovery_challenge == request.discovery_challenge;
       }
 
       if (confirmed) {
@@ -173,20 +176,23 @@ bool EspNowNode::setup() {
   return success;
 }
 
-bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t retries) {
+bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries) {
   if (!_setup_successful) {
     return false;
   }
 
-  typedef EspNowMessageHeaderV1 Message;
-  Message message;
+  // Application message header
+  EspNowMessageHeaderV1 header;
+
+  EspNowChallengeRequestV1 request;
+  // The challenge we expect to get back in the challenge/firmware response.
+  request.challenge_challenge = esp_random();
+  request.firmware_version = _firmware_version;
 
   // First, we must request the challenge to use.
   bool got_challange = false;
   int8_t challenge_retries = NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST;
-  while (challenge_retries-- > 0) {
-    EspNowChallengeRequestV1 request;
-    request.firmware_version = _firmware_version;
+  while (!got_challange && challenge_retries-- > 0) {
     log("Sending challenge request (" + String(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - challenge_retries - 1) + ").",
         ESP_LOG_INFO);
     auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowChallengeRequestV1));
@@ -196,21 +202,33 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
       case MESSAGE_ID_CHALLENGE_RESPONSE_V1: {
         log("Got challenge response.", ESP_LOG_INFO);
         EspNowChallengeResponseV1 *response = (EspNowChallengeResponseV1 *)decrypted_data.get();
-        message.challenge = response->challenge;
-        got_challange = true;
+        // Validate the challenge for the challenge request/response pair
+        if (response->challenge_challenge == request.challenge_challenge) {
+          header.header_challenge = response->header_challenge;
+          got_challange = true;
+        } else {
+          log("Challenge mismatch for challenge request/response (expected: " + String(request.challenge_challenge) +
+                  ", got: " + String(response->challenge_challenge) + ")",
+              ESP_LOG_WARN);
+        }
         break;
       }
-      case MESSAGE_ID_CHALLENGE_UPDATE_RESPONSE_V1: {
+      case MESSAGE_ID_CHALLENGE_FIRMWARE_RESPONSE_V1: {
         log("Got challenge update firmware response.", ESP_LOG_INFO);
-        EspNowChallengeDownloadResponseV1 *message = (EspNowChallengeDownloadResponseV1 *)decrypted_data.get();
-        // Hosts wants us to update firmware. Lets do it.
-        // handleFirmwareUpdate will never return.
-        handleFirmwareUpdate(message->wifi_ssid, message->wifi_password, message->url);
+        EspNowChallengeFirmwareResponseV1 *response = (EspNowChallengeFirmwareResponseV1 *)decrypted_data.get();
+        // Validate the challenge for the challenge request/response pair
+        if (response->challenge_challenge == request.challenge_challenge) {
+          // Hosts wants us to update firmware. Lets do it.
+          // handleFirmwareUpdate will never return.
+          handleFirmwareUpdate(response->wifi_ssid, response->wifi_password, response->url);
+        } else {
+          log("Challenge mismatch for challenge request/ firmware response (expected: " +
+                  String(request.challenge_challenge) + ", got: " + String(response->challenge_challenge) + ")",
+              ESP_LOG_WARN);
+        }
         break;
       }
       }
-
-      break;
     }
   }
 
@@ -226,10 +244,10 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
     return false; // Unreachable, but just in case.
   }
 
-  uint32_t size = sizeof(Message) + sub_message_size;
+  uint32_t size = sizeof(EspNowMessageHeaderV1) + message_size;
   std::unique_ptr<uint8_t[]> buff(new (std::nothrow) uint8_t[size]);
-  memcpy(buff.get(), &message, sizeof(Message));
-  memcpy(buff.get() + sizeof(Message), sub_message, sub_message_size);
+  memcpy(buff.get(), &header, sizeof(EspNowMessageHeaderV1));
+  memcpy(buff.get() + sizeof(EspNowMessageHeaderV1), message, message_size);
 
   uint16_t attempt = 0;
   log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
@@ -256,8 +274,8 @@ bool EspNowNode::sendMessage(void *sub_message, size_t sub_message_size, int16_t
       // something else. A timeout will almost never happen probably, as esp-now
       // is very fast in acking/nacking.
       delay(attempt * 5); // Backoff
-      message.retries = attempt;
-      memcpy(buff.get(), &message, sizeof(Message)); // "Refresh" message in buffer.
+      header.retries = attempt;
+      memcpy(buff.get(), &header, sizeof(EspNowMessageHeaderV1)); // "Refresh" message in buffer.
       log("Sending application message (" + String(attempt) + ")", ESP_LOG_INFO);
       xEventGroupClearBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT);
       sendMessageInternal(buff.get(), size);

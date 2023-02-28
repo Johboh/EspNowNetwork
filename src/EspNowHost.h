@@ -100,8 +100,8 @@ public:
 
 private:
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
-  void handleDiscoveryRequest(uint8_t *mac_addr);
-  void handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_version);
+  void handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge);
+  void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version);
 
   void sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length);
 

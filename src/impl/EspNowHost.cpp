@@ -118,13 +118,14 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
   case MESSAGE_ID_HEADER: {
     typedef EspNowMessageHeaderV1 Message;
     auto *message = (Message *)data;
-    log("Got application message from 0x" + String(mac_address, HEX) + " with challange: " + String(message->challenge),
+    log("Got application message from 0x" + String(mac_address, HEX) +
+            " with challange: " + String(message->header_challenge),
         ESP_LOG_INFO);
     // Verify challenge.
     auto challenge = _challenges.find(mac_address);
     if (challenge != _challenges.end()) {
       auto expected_challenge = challenge->second;
-      if (expected_challenge == message->challenge) {
+      if (expected_challenge == message->header_challenge) {
         metadata.retries = message->retries;
         auto outer_message_size = sizeof(Message);
         const uint8_t *inner_message = data + outer_message_size;
@@ -132,23 +133,24 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
           _on_application_message(metadata, inner_message);
         }
       } else {
-        log("Challenge mismatch (expected: " + String(expected_challenge) + ", got: " + String(message->challenge) +
-                ") for 0x" + String(mac_address, HEX),
+        log("Challenge mismatch (expected: " + String(expected_challenge) +
+                ", got: " + String(message->header_challenge) + ") for 0x" + String(mac_address, HEX),
             ESP_LOG_WARN);
       }
       // Remove previous challenge (even on mismatch to prevent brute force)
       _challenges.erase(mac_address);
     } else {
       log("No challenge registered for 0x" + String(mac_address, HEX) +
-              " (challenge received: " + String(message->challenge) + ")",
+              " (challenge received: " + String(message->header_challenge) + ")",
           ESP_LOG_WARN);
     }
 
     break;
   }
   case MESSAGE_ID_DISCOVERY_REQUEST_V1: {
+    EspNowDiscoveryRequestV1 *message = (EspNowDiscoveryRequestV1 *)data;
     log("Got discovery request from 0x" + String(mac_address, HEX) + " and sending reply.", ESP_LOG_INFO);
-    handleDiscoveryRequest(mac_addr);
+    handleDiscoveryRequest(mac_addr, message->discovery_challenge);
     break;
   }
   case MESSAGE_ID_CHALLENGE_REQUEST_V1: {
@@ -156,7 +158,7 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
     auto firmware_version = message->firmware_version;
     log("Got challenge request from 0x" + String(mac_address, HEX) + ", firmware version: " + String(firmware_version),
         ESP_LOG_INFO);
-    handleChallengeRequest(mac_addr, firmware_version);
+    handleChallengeRequest(mac_addr, message->challenge_challenge, firmware_version);
     break;
   }
 
@@ -168,12 +170,13 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
   }
 }
 
-void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr) {
+void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge) {
   EspNowDiscoveryResponseV1 message;
+  message.discovery_challenge = discovery_challenge;
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowDiscoveryResponseV1));
 }
 
-void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_version) {
+void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version) {
   uint64_t mac_address = macToMac(mac_addr);
 
   // Any firmware to update?
@@ -181,17 +184,19 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_ver
     auto metadata = _firwmare_update(mac_address, firmware_version);
     if (metadata) {
       log("Sending firmware update response to 0x" + String(mac_address, HEX), ESP_LOG_INFO);
-      EspNowChallengeDownloadResponseV1 message;
+      EspNowChallengeFirmwareResponseV1 message;
+      message.challenge_challenge = challenge_challenge;
       strncpy(message.wifi_ssid, metadata->wifi_ssid, sizeof(message.wifi_ssid));
       strncpy(message.wifi_password, metadata->wifi_password, sizeof(message.wifi_password));
       strncpy(message.url, metadata->url, sizeof(message.url));
-      sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeDownloadResponseV1));
+      sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeFirmwareResponseV1));
       return;
     }
   }
 
   // No firmware update (early return above)
   EspNowChallengeResponseV1 message;
+  message.challenge_challenge = challenge_challenge;
   // Not sure how we want to do it here. For now, if we already have a challenge, don't generate a new one.
   // We always remove a challenge once it has been used, or o challenge verification failure.
   // We re-use any not yet challanged challange in so the node get same challange back in case
@@ -200,13 +205,14 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t firmware_ver
   auto challenge = _challenges.find(mac_address);
   if (challenge != _challenges.end()) {
     // Existing one, reuse.
-    message.challenge = challenge->second;
+    message.header_challenge = challenge->second;
   } else {
     // No existing one, create new one.
-    message.challenge = esp_random();
-    _challenges[mac_address] = message.challenge;
+    message.header_challenge = esp_random();
+    _challenges[mac_address] = message.header_challenge;
   }
-  log("Sending challenge response to 0x" + String(mac_address, HEX) + " with challenge " + String(message.challenge),
+  log("Sending challenge response to 0x" + String(mac_address, HEX) + " with challenge " +
+          String(message.header_challenge),
       ESP_LOG_INFO);
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeResponseV1));
 }
