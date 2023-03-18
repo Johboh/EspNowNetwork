@@ -1,13 +1,7 @@
 #include <Arduino.h>
 #include <EspNowCrypt.h>
 #include <EspNowHost.h>
-#ifdef ESP32
 #include <WiFi.h>
-#elif ESP8266
-#include <ESP8266WiFi.h>
-#else
-#error "Unsupported hardware. Sorry!"
-#endif
 
 // These structs are the application messages shared across the host and node device.
 #pragma pack(1)
