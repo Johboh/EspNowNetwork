@@ -7,8 +7,10 @@ TBD
 ### Example
 See [host example](examples/Host/Host.ino) and [node example](examples/Node/Node.ino).
 
-### Supported platforms
+### Functionallity verified on the following platforms and frameworks
 - ESP32 (tested with platform I/O [espressif32@5.3.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.6](https://github.com/espressif/arduino-esp32) on ESP32-S2 and ESP32-C3)
+
+Newer version most probably work too, but they have not been verified.
 
 ### Dependencies
 - Needs C++17 for `std::optional`.
