@@ -1,4 +1,8 @@
 # EspNowNetwork
+[![Test](https://github.com/Johboh/EspNowNetwork/actions/workflows/test.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork/actions/workflows/test.yaml)
+[![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
+
+
 Arduino library for setting up a network of ESP NOW nodes
 
 ### Usage
