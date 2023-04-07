@@ -113,7 +113,6 @@ private:
   EspNowCrypt &_crypt;
   // Map from MAC address to challenge.
   std::map<uint64_t, uint32_t> _challenges;
-  uint64_t _number_of_messages = 0; // Counter for logging purposes.
 
   OnLog _on_log;
   OnNewMessage _on_new_message;

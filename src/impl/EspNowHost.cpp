@@ -84,7 +84,6 @@ void EspNowHost::handle() {
   auto result = xQueueReceive(_receive_queue, &element, 1); // Only wait one tick.
   if (result == pdPASS) {
     // We have a new message!
-    ++_number_of_messages;
     if (_on_new_message) {
       _on_new_message(); // Notify.
     }
@@ -255,7 +254,6 @@ uint64_t EspNowHost::macToMac(uint8_t *mac_addr) {
 
 void EspNowHost::log(const String message, const esp_log_level_t log_level) {
   if (_on_log) {
-    String messag_with_counter = "[#" + String(_number_of_messages) + "] " + message;
-    _on_log(messag_with_counter, log_level);
+    _on_log(message, log_level);
   }
 }
