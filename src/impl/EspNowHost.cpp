@@ -46,10 +46,11 @@ void esp_now_on_data_callback(const uint8_t *mac_addr, const uint8_t *data, int 
   }
 }
 
-EspNowHost::EspNowHost(EspNowCrypt &crypt, OnNewMessage on_new_message, OnApplicationMessage on_application_message,
-                       FirmwareUpdateAvailable firwmare_update, OnLog on_log)
-    : _crypt(crypt), _on_log(on_log), _on_new_message(on_new_message), _firwmare_update(firwmare_update),
-      _on_application_message(on_application_message) {}
+EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::WiFiInterface wifi_interface, OnNewMessage on_new_message,
+                       OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update,
+                       OnLog on_log)
+    : _crypt(crypt), _wifi_interface(wifi_interface), _on_log(on_log), _on_new_message(on_new_message),
+      _firwmare_update(firwmare_update), _on_application_message(on_application_message) {}
 
 bool EspNowHost::setup() {
   esp_err_t r = esp_now_init();
@@ -61,8 +62,6 @@ bool EspNowHost::setup() {
   } else {
     log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
   }
-
-  esp_wifi_config_espnow_rate(WIFI_IF_AP, WIFI_PHY_RATE_LORA_250K);
 
   r = esp_now_register_recv_cb(esp_now_on_data_callback);
   if (r != ESP_OK) {
@@ -218,7 +217,7 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
 
 void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length) {
   esp_now_peer_info_t peer_info;
-  peer_info.ifidx = WIFI_IF_AP;
+  peer_info.ifidx = _wifi_interface == WiFiInterface::AP ? WIFI_IF_AP : WIFI_IF_STA;
   // Channel 0 means "use the current channel which station or softap is on". We should hardcode this to a specific
   // channel so we for sure use same channel on both router and nodes.
   peer_info.channel = 0;

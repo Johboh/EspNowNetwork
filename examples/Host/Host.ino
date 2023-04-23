@@ -2,6 +2,7 @@
 #include <EspNowCrypt.h>
 #include <EspNowHost.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
 
 // These structs are the application messages shared across the host and node device.
 #pragma pack(1)
@@ -96,12 +97,14 @@ EspNowHost::OnLog _on_log = [](const String message, const esp_log_level_t log_l
 };
 
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
-EspNowHost _esp_now_host(_esp_now_crypt, _on_new_message, _on_application_message, _firmware_update_available, _on_log);
+EspNowHost _esp_now_host(_esp_now_crypt, EspNowHost::WiFiInterface::STA, _on_new_message, _on_application_message,
+                         _firmware_update_available, _on_log);
 
 void setup() {
   Serial.begin(115200);
 
   // Setup WiFI
+  WiFi.mode(WIFI_STA);
   WiFi.begin(wifi_ssid, wifi_password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("Connection Failed! Rebooting...");
@@ -115,6 +118,8 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   _turn_of_led_at_ms = millis() + 1000;
+
+  esp_wifi_set_ps(WIFI_PS_NONE); // No sleep on WiFi to be able to receive ESP-NOW packages without being in AP mode.
 
   _esp_now_host.setup();
 }

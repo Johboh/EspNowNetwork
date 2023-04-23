@@ -70,11 +70,18 @@ public:
   typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address, uint32_t firmware_version)>
       FirmwareUpdateAvailable;
 
+  enum class WiFiInterface {
+    AP,  // Use the Access Point interface for ESP-NOW.
+    STA, // Use the Station/Client interface for ESP-NOW.
+  };
+
 public:
   /**
    * @brief Construct a new EspNowHost
    *
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
+   * @param wifi_interface what network interface to use to send ESP-NOW messages on. You need to setup this interface
+   * beforehand when setting up your WiFi.
    * @param on_new_message callback on any new message received, regardless of type, validation, decrypted correctly
    * etc. Intended for turning on led or similar to indicate new package.
    * @param on_application_message callback when there is a verified, decrypted application message received.
@@ -84,8 +91,9 @@ public:
    * and its firmware version have new firmware.
    * @param on_log callback when the host want to log something.
    */
-  EspNowHost(EspNowCrypt &crypt, OnNewMessage on_new_message, OnApplicationMessage on_application_message,
-             FirmwareUpdateAvailable firwmare_update = {}, OnLog on_log = {});
+  EspNowHost(EspNowCrypt &crypt, WiFiInterface wifi_interface, OnNewMessage on_new_message,
+             OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update = {},
+             OnLog on_log = {});
 
 public:
   /**
@@ -111,6 +119,7 @@ private:
 
 private:
   EspNowCrypt &_crypt;
+  WiFiInterface _wifi_interface;
   // Map from MAC address to challenge.
   std::map<uint64_t, uint32_t> _challenges;
 
