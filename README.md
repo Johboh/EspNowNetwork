@@ -19,7 +19,7 @@ Features:
 See [host example](examples/Host/Host.ino) and [node example](examples/Node/Node.ino).
 
 ### Functionallity verified on the following platforms and frameworks
-- ESP32 (tested with platform I/O [espressif32@5.3.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.6](https://github.com/espressif/arduino-esp32) on ESP32-S2 and ESP32-C3)
+- ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@5.1.1](https://github.com/espressif/esp-idf) on ESP32-S2 and ESP32-C3)
 
 Newer version most probably work too, but they have not been verified.
 
