@@ -1,12 +1,14 @@
 #ifndef __ESP_NOW_NODE_H__
 #define __ESP_NOW_NODE_H__
 
-#include "esp_log.h"
-#include <Arduino.h>
 #include <EspNowCrypt.h>
-#include <Preferences.h>
+#include <EspNowPreferences.h>
+#include <esp_log.h>
+#include <esp_netif.h>
+#include <functional>
+#include <string>
 
-#define NUM_RETRIES 50
+#define NUM_MESSAGE_RETRIES 50
 
 /**
  * @brief ESP Now Network: Node
@@ -33,16 +35,18 @@ public:
    * @param message the log message to log.
    * @param log_level the severity of the log.
    */
-  typedef std::function<void(const String message, const esp_log_level_t log_level)> OnLog;
+  typedef std::function<void(const std::string message, const esp_log_level_t log_level)> OnLog;
 
   /**
    * @brief Construct a new EspNowNode.
    *
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
+   * @param preferences the EspNowPreferences to use for storing/reading preferences. Must be initialized first (call
+   * EspNowPreferences::init()).
    * @param firmware_version the (incremental) firmware version that this node is currently running.
    * @param on_log callback when the host want to log something.
    */
-  EspNowNode(EspNowCrypt &crypt, uint32_t firmware_version, OnLog on_log = {});
+  EspNowNode(EspNowCrypt &crypt, EspNowPreferences &preferences, uint32_t firmware_version, OnLog on_log = {});
 
 public:
   /**
@@ -68,7 +72,7 @@ public:
    * will block until successful or failing delivery of the message. If set to -1,
    * it will only try once.
    */
-  bool sendMessage(void *message, size_t message_size, int16_t retries = NUM_RETRIES);
+  bool sendMessage(void *message, size_t message_size, int16_t retries = NUM_MESSAGE_RETRIES);
 
   /**
    * Calling this will clear the host.
@@ -95,7 +99,12 @@ private:
   /**
    * @brief Log if log callback is available.
    */
-  void log(const String message, const esp_log_level_t log_level);
+  void log(const std::string message, const esp_log_level_t log_level);
+
+  /**
+   * @brief Log if log callback is available.
+   */
+  void log(const std::string message, const esp_err_t esp_err);
 
   /**
    * @brief Connects to WiFi and download new firmware.
@@ -107,9 +116,10 @@ private:
 private:
   OnLog _on_log;
   EspNowCrypt &_crypt;
-  Preferences _preferences;
+  esp_netif_t *_netif_sta;
   uint32_t _firmware_version;
   bool _setup_successful = false;
+  EspNowPreferences &_preferences;
   uint8_t _esp_now_host_address[6];
 };
 

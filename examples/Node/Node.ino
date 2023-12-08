@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <EspNowCrypt.h>
 #include <EspNowNode.h>
+#include <EspNowPreferences.h>
 
 #define SLEEP_TIME_US (1000LL * 1000LL * 60LL * 1LL) // 1 minute
 
@@ -29,13 +30,13 @@ const char esp_now_encryption_secret[] = "01234567"; // Must be exact 8 bytes lo
 
 unsigned long _turn_of_led_at_ms = 0;
 
-EspNowNode::OnLog _on_log = [](const String message, const esp_log_level_t log_level) {
+EspNowNode::OnLog _on_log = [](const std::string message, const esp_log_level_t log_level) {
   // Callback for logging. Can be omitted.
   if (log_level == ESP_LOG_NONE) {
     return; // Weird flex, but ok
   }
 
-  String level;
+  std::string level;
   switch (log_level) {
   case ESP_LOG_NONE:
     level = "none";
@@ -60,14 +61,17 @@ EspNowNode::OnLog _on_log = [](const String message, const esp_log_level_t log_l
     break;
   }
 
-  Serial.println("EspNowNode (" + level + "): " + message);
+  Serial.println(("EspNowNode (" + level + "): " + message).c_str());
 };
 
+EspNowPreferences _esp_now_preferences;
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
-EspNowNode _esp_now_node(_esp_now_crypt, FIRMWARE_VERSION, _on_log);
+EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_log);
 
 void setup() {
   Serial.begin(115200);
+
+  _esp_now_preferences.init();
 
   // Setup node, send message, and then go to sleep.
   if (_esp_now_node.setup()) {

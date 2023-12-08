@@ -1,12 +1,12 @@
 #ifndef __ESP_NOW_HOST_H__
 #define __ESP_NOW_HOST_H__
 
-#include "esp_log.h"
-#include <Arduino.h>
 #include <EspNowCrypt.h>
+#include <esp_log.h>
 #include <functional>
 #include <map>
 #include <optional>
+#include <string>
 
 /**
  * @brief ESP Now Network: Host
@@ -41,7 +41,7 @@ public:
    * @param message the log message to log.
    * @param log_level the severity of the log.
    */
-  typedef std::function<void(const String message, const esp_log_level_t log_level)> OnLog;
+  typedef std::function<void(const std::string message, const esp_log_level_t log_level)> OnLog;
 
   typedef std::function<void(void)> OnNewMessage;
 
@@ -115,7 +115,10 @@ private:
 
   uint64_t macToMac(uint8_t *mac_addr);
 
-  void log(const String message, const esp_log_level_t log_level);
+  void log(const std::string message, const esp_log_level_t log_level);
+  void log(const std::string message, const esp_err_t esp_err);
+
+  std::string toHex(uint64_t i);
 
 private:
   EspNowCrypt &_crypt;

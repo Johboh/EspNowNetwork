@@ -62,13 +62,13 @@ EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac
   return std::nullopt;
 };
 
-EspNowHost::OnLog _on_log = [](const String message, const esp_log_level_t log_level) {
+EspNowHost::OnLog _on_log = [](const std::string message, const esp_log_level_t log_level) {
   // Callback for logging. Can be omitted.
   if (log_level == ESP_LOG_NONE) {
     return; // Weird flex, but ok
   }
 
-  String level;
+  std::string level;
   switch (log_level) {
   case ESP_LOG_NONE:
     level = "none";
@@ -93,7 +93,7 @@ EspNowHost::OnLog _on_log = [](const String message, const esp_log_level_t log_l
     break;
   }
 
-  Serial.println("EspNowHost (" + level + "): " + message);
+  Serial.println(("EspNowHost (" + level + "): " + message).c_str());
 };
 
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);

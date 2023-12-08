@@ -1,7 +1,7 @@
 #ifndef __ESP_NOW_STRUCTURE_H__
 #define __ESP_NOW_STRUCTURE_H__
 
-#include <Arduino.h>
+#include <cstdint>
 
 #define MESSAGE_ID_HEADER 0x03
 

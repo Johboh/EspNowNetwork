@@ -1,7 +1,8 @@
-#include "esp_random.h"
-#include "mbedtls/gcm.h"
 #include <EspNowCrypt.h>
+#include <cstring>
 #include <esp_now.h>
+#include <esp_random.h>
+#include <mbedtls/gcm.h>
 
 #define KEY_SIZE_IN_BITS (16 * 8) // Assuming 16 bytes key size.
 #define SECRET_LENGTH 8           // Hardcoded to 8 bytes.
@@ -42,7 +43,7 @@ esp_err_t EspNowCrypt::sendMessage(const uint8_t *mac_addr, const void *input_me
   size_t total_length = SECRET_LENGTH + input_length;
   // We need at least 16 bytes, but we don't need a multiple of 16 bytes.
   // If smaller than 16, round up.
-  header.length = max((size_t)16, total_length);
+  header.length = std::max((size_t)16, total_length);
   std::unique_ptr<uint8_t[]> encrypted(new (std::nothrow) uint8_t[header.length]);
   if (encrypted == nullptr) {
     // Failed to allocate memory.
@@ -56,8 +57,8 @@ esp_err_t EspNowCrypt::sendMessage(const uint8_t *mac_addr, const void *input_me
     // Failed to allocate memory.
     return ESP_ERR_NO_MEM;
   }
-  memcpy(input.get(), _secret, SECRET_LENGTH);
-  memcpy(input.get() + SECRET_LENGTH, input_message, input_length);
+  std::memcpy(input.get(), _secret, SECRET_LENGTH);
+  std::memcpy(input.get() + SECRET_LENGTH, input_message, input_length);
 
   mbedtls_gcm_context aes;
   mbedtls_gcm_init(&aes);
@@ -74,8 +75,8 @@ esp_err_t EspNowCrypt::sendMessage(const uint8_t *mac_addr, const void *input_me
     // Failed to allocate memory.
     return ESP_ERR_NO_MEM;
   }
-  memcpy(wire_buffer.get(), &header, sizeof(EspNowEncryptionHeader));
-  memcpy(wire_buffer.get() + sizeof(EspNowEncryptionHeader), encrypted.get(), header.length);
+  std::memcpy(wire_buffer.get(), &header, sizeof(EspNowEncryptionHeader));
+  std::memcpy(wire_buffer.get() + sizeof(EspNowEncryptionHeader), encrypted.get(), header.length);
 
   esp_err_t r = esp_now_send(mac_addr, wire_buffer.get(), wire_length);
 
@@ -123,7 +124,7 @@ std::unique_ptr<uint8_t[]> EspNowCrypt::decryptMessage(const void *input_message
     // Failed to allocate memory.
     return nullptr;
   }
-  memcpy(output_message.get(), decrypted.get() + SECRET_LENGTH, output_message_length);
+  std::memcpy(output_message.get(), decrypted.get() + SECRET_LENGTH, output_message_length);
 
   return output_message;
 }

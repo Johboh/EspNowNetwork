@@ -1,8 +1,7 @@
 #ifndef __ESP_CRYPT_H__
 #define __ESP_CRYPT_H__
 
-#include "esp_err.h"
-#include <Arduino.h>
+#include <esp_err.h>
 #include <memory>
 
 /**
