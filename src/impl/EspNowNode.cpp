@@ -251,7 +251,7 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
         if (response->challenge_challenge == request.challenge_challenge) {
           // Hosts wants us to update firmware. Lets do it.
           // handleFirmwareUpdate will never return.
-          handleFirmwareUpdate(response->wifi_ssid, response->wifi_password, response->url);
+          handleFirmwareUpdate(response->wifi_ssid, response->wifi_password, response->url, response->md5);
         } else {
           log("Challenge mismatch for challenge request/ firmware response (expected: " +
                   std::to_string(request.challenge_challenge) +
@@ -368,19 +368,22 @@ void EspNowNode::log(const std::string message, const esp_err_t esp_err) {
   }
 }
 
-void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url) {
-  // Stop ESP-NOW first.
-  esp_now_deinit();
+void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, char *md5) {
+  // Stop ESP-NOW and any other wifi related things before trying to update firmware.
+  esp_wifi_stop();
   esp_netif_destroy_default_wifi(_netif_sta);
   esp_event_loop_delete_default();
   esp_netif_deinit();
+  esp_now_deinit();
+  esp_wifi_deinit();
 
   // Connect to wifi.
   EspNowOta _esp_now_ota(
       [&](const std::string message, const esp_log_level_t log_level) { log("EspNowOta: " + message, log_level); });
 
   uint16_t retries = 2;
-  if (!_esp_now_ota.connectToWiFi(wifi_ssid, wifi_password, retries)) {
+  unsigned long connect_timeout_ms = 15000;
+  if (!_esp_now_ota.connectToWiFi(wifi_ssid, wifi_password, connect_timeout_ms, retries)) {
     log("Connection to WiFi failed!", ESP_LOG_ERROR);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_restart();
@@ -389,7 +392,7 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   // Ok we have WiFi.
   // Download file.
   auto urlstr = std::string(url);
-  bool success = _esp_now_ota.updateFrom(urlstr);
+  bool success = _esp_now_ota.updateFrom(urlstr, md5);
 
   if (success) {
     log("Firwmare update successful. Rebooting.", ESP_LOG_INFO);

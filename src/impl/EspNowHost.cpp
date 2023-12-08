@@ -195,6 +195,7 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
       strncpy(message.wifi_ssid, metadata->wifi_ssid, sizeof(message.wifi_ssid));
       strncpy(message.wifi_password, metadata->wifi_password, sizeof(message.wifi_password));
       strncpy(message.url, metadata->url, sizeof(message.url));
+      strncpy(message.md5, metadata->md5, sizeof(message.md5));
       sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeFirmwareResponseV1));
       return;
     }

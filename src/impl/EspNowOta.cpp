@@ -54,7 +54,8 @@ void EspNowOta::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t
   }
 }
 
-bool EspNowOta::connectToWiFi(const char *ssid, const char *password, uint16_t retries) {
+bool EspNowOta::connectToWiFi(const char *ssid, const char *password, unsigned long connect_timeout_ms,
+                              uint16_t retries) {
 
   _wifi_num_retries = retries;
 
@@ -86,8 +87,8 @@ bool EspNowOta::connectToWiFi(const char *ssid, const char *password, uint16_t r
 
   /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
    * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
-  EventBits_t bits =
-      xEventGroupWaitBits(_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+  EventBits_t bits = xEventGroupWaitBits(_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE,
+                                         connect_timeout_ms / portTICK_PERIOD_MS);
 
   /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
    * happened. */

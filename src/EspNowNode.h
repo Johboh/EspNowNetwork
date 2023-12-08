@@ -111,7 +111,7 @@ private:
    *
    * Will never return. Will restart on success or on failure.
    */
-  void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url);
+  void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, char *md5);
 
 private:
   OnLog _on_log;

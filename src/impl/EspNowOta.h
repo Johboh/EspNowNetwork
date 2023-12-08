@@ -32,7 +32,7 @@ public:
   /**
    * @brief Connect to wifi.
    */
-  bool connectToWiFi(const char *ssid, const char *password, uint16_t retries);
+  bool connectToWiFi(const char *ssid, const char *password, unsigned long connect_timeout_ms, uint16_t retries);
 
   /**
    * @brief Try to update firmware from the given URL.

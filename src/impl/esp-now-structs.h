@@ -71,6 +71,7 @@ struct EspNowChallengeFirmwareResponseV1 {
   char wifi_ssid[32];           // WiFi SSID that node should connect to.
   char wifi_password[64];       // WiFi password that the node should connect to.
   char url[96];                 // url where to find firmware binary. Note the max file path.
+  char md5[32];                 // MD5 hash of firmware. Does not include trailing \0
 };
 
 #pragma pack(0)
