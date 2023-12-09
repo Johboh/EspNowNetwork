@@ -2,11 +2,12 @@
   "name": "EspNowNetwork",
   "keywords": "esp32, esp-now, ESP Now, now",
   "description": "Arduino/ESP-IDF library for setting up a network of ESP NOW nodes",
+  "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
   "authors":
   {
     "name": "Johan Böhlin"
   },
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "repository":
   {

@@ -1,27 +1,23 @@
 #include <EspNowPreferences.h>
+#include <esp_err.h>
+#include <esp_log.h>
 #include <esp_system.h>
-#include <esp_vfs.h>
-#include <esp_vfs_fat.h>
 #include <nvs.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
 
 #define TAG "ESP_NOW_PREFERENCES"
 
 #define NVS_STORAGE "storage"
 // Max key length: 15 chars
-#define NVS_STORAGE_KEY_HAVE_MAC "have_mac"
 #define NVS_STORAGE_KEY_HOST_MAC "host_mac"
 
 EspNowPreferences::EspNowPreferences() {}
 
-void EspNowPreferences::init() {
-  ESP_LOGI(TAG, "Initialize NVS");
+void EspNowPreferences::initalizeNVS() {
+  ESP_LOGI(TAG, "Initializing NVS");
   // Initialize NVS
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_LOGE(TAG, "Erasing nvs (%s)", esp_err_to_name(err));
+    ESP_LOGE(TAG, "Erasing NVS (%s)", esp_err_to_name(err));
     ESP_ERROR_CHECK(nvs_flash_erase());
     err = nvs_flash_init();
   }
@@ -34,43 +30,35 @@ void EspNowPreferences::init() {
   }
 }
 
-void EspNowPreferences::setHasMac(bool have) { setBool(NVS_STORAGE_KEY_HAVE_MAC, have); }
-bool EspNowPreferences::hasMac() { return getBool(NVS_STORAGE_KEY_HAVE_MAC); }
-
-bool EspNowPreferences::setMac(uint8_t *mac, size_t length) {
+bool EspNowPreferences::espNowSetMacForHost(uint8_t mac[MAC_ADDRESS_LENGTH]) {
   auto key = NVS_STORAGE_KEY_HOST_MAC;
-  esp_err_t err = nvs_set_blob(_nvs_handle, key, mac, length);
+  esp_err_t err = nvs_set_blob(_nvs_handle, key, mac, MAC_ADDRESS_LENGTH);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to set blob to NVS with key %s (%s)", key, esp_err_to_name(err));
   }
   return err == ESP_OK;
 }
 
-size_t EspNowPreferences::getMacLength() {
-  auto key = NVS_STORAGE_KEY_HOST_MAC;
-  size_t required_size;
-  esp_err_t err = nvs_get_blob(_nvs_handle, key, NULL, &required_size);
-  if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to get required size for blob from NVS with key %s (%s)", key, esp_err_to_name(err));
-    return 0;
-  }
-  return required_size;
-}
-
-bool EspNowPreferences::getMac(uint8_t *buffer, size_t length) {
+bool EspNowPreferences::espNowGetMacForHost(uint8_t *buffer) {
   auto key = NVS_STORAGE_KEY_HOST_MAC;
   if (buffer == nullptr) {
     ESP_LOGE(TAG, "mac buffer is null");
     return false;
   }
 
-  auto required_size = getMacLength();
-  if (length == 0 || length < required_size) {
-    ESP_LOGE(TAG, "Length of buffer is zero or is too small.");
+  size_t required_size;
+  esp_err_t err = nvs_get_blob(_nvs_handle, key, NULL, &required_size);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to get required size for blob from NVS with key %s (%s)", key, esp_err_to_name(err));
+    return false;
+  }
+  if (required_size != MAC_ADDRESS_LENGTH) {
+    ESP_LOGE(TAG, "Length of buffer stored in memory is not MAC address size of MAC_ADDRESS_LENGTH(%d), was %d",
+             MAC_ADDRESS_LENGTH, required_size);
     return false;
   }
 
-  esp_err_t err = nvs_get_blob(_nvs_handle, key, buffer, &required_size);
+  err = nvs_get_blob(_nvs_handle, key, buffer, &required_size);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to get blob from NVS with key %s (%s)", key, esp_err_to_name(err));
     return false;
@@ -94,22 +82,4 @@ bool EspNowPreferences::eraseAll() {
     return false;
   }
   return true;
-}
-
-uint8_t EspNowPreferences::getU8(const std::string &key) {
-  uint8_t r = 0;
-  esp_err_t err = nvs_get_u8(_nvs_handle, key.c_str(), &r);
-  if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to get u8 from NVS with key %s (%s)", key.c_str(), esp_err_to_name(err));
-    return 0;
-  }
-  return r;
-}
-void EspNowPreferences::setU8(const std::string &key, const uint8_t value, bool commit) {
-  esp_err_t err = nvs_set_u8(_nvs_handle, key.c_str(), value);
-  if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to set u8 to NVS with key %s (%s)", key.c_str(), esp_err_to_name(err));
-  } else if (commit) {
-    EspNowPreferences::commit();
-  }
 }

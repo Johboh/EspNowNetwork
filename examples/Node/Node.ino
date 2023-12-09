@@ -71,7 +71,7 @@ EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION,
 void setup() {
   Serial.begin(115200);
 
-  _esp_now_preferences.init();
+  _esp_now_preferences.initalizeNVS();
 
   // Setup node, send message, and then go to sleep.
   if (_esp_now_node.setup()) {

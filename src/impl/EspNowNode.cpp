@@ -69,7 +69,8 @@ void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uin
 }
 #endif
 
-EspNowNode::EspNowNode(EspNowCrypt &crypt, EspNowPreferences &preferences, uint32_t firmware_version, OnLog on_log)
+EspNowNode::EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version,
+                       OnLog on_log)
     : _on_log(on_log), _crypt(crypt), _firmware_version(firmware_version), _preferences(preferences) {}
 
 bool EspNowNode::setup() {
@@ -133,10 +134,9 @@ bool EspNowNode::setup() {
   // Else, add broadcast address and announce our presence.
   // If the mac we have stored is not valid, we will fail when sending messages,
   // and will clear the MAC we have and restart, and thus end up here again.
-  bool presumably_valid_host_mac_address = _preferences.hasMac() && _preferences.getMacLength() == ESP_NOW_ETH_ALEN;
+  bool presumably_valid_host_mac_address = _preferences.espNowGetMacForHost(_esp_now_host_address);
   if (presumably_valid_host_mac_address) {
     log("Presumably valid MAC address loaded.", ESP_LOG_INFO);
-    _preferences.getMac(_esp_now_host_address, ESP_NOW_ETH_ALEN);
   } else {
     log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
     std::memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
@@ -186,8 +186,7 @@ bool EspNowNode::setup() {
 
       if (confirmed) {
         log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
-        _preferences.setHasMac(true);
-        _preferences.setMac(mac_addr, ESP_NOW_ETH_ALEN);
+        _preferences.espNowSetMacForHost(mac_addr);
         _preferences.commit();
         esp_restart(); // Start over from the begining.
       }

@@ -1,8 +1,8 @@
 #ifndef __ESP_NOW_NODE_H__
 #define __ESP_NOW_NODE_H__
 
+#include "Preferences.h"
 #include <EspNowCrypt.h>
-#include <EspNowPreferences.h>
 #include <esp_log.h>
 #include <esp_netif.h>
 #include <functional>
@@ -41,12 +41,11 @@ public:
    * @brief Construct a new EspNowNode.
    *
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
-   * @param preferences the EspNowPreferences to use for storing/reading preferences. Must be initialized first (call
-   * EspNowPreferences::init()).
+   * @param preferences the EspNowNetwork::Preferences to use for storing/reading preferences.
    * @param firmware_version the (incremental) firmware version that this node is currently running.
    * @param on_log callback when the host want to log something.
    */
-  EspNowNode(EspNowCrypt &crypt, EspNowPreferences &preferences, uint32_t firmware_version, OnLog on_log = {});
+  EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version, OnLog on_log = {});
 
 public:
   /**
@@ -119,8 +118,8 @@ private:
   esp_netif_t *_netif_sta;
   uint32_t _firmware_version;
   bool _setup_successful = false;
-  EspNowPreferences &_preferences;
   uint8_t _esp_now_host_address[6];
+  EspNowNetwork::Preferences &_preferences;
 };
 
 #endif // __ESP_NOW_NODE_H__
