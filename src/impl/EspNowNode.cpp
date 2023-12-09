@@ -392,7 +392,8 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   // Ok we have WiFi.
   // Download file.
   auto urlstr = std::string(url);
-  bool success = _esp_now_ota.updateFrom(urlstr, md5);
+  auto md5str = std::string(md5, 32);
+  bool success = _esp_now_ota.updateFrom(urlstr, md5str);
 
   if (success) {
     log("Firwmare update successful. Rebooting.", ESP_LOG_INFO);

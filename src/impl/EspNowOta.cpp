@@ -117,7 +117,9 @@ bool EspNowOta::updateFrom(std::string &url, std::string md5hash) {
   log("Found partition " + std::string(partition->label), ESP_LOG_INFO);
 
   if (!md5hash.empty() && md5hash.length() != 32) {
-    log("MD5 is not correct length. Leave empty for no MD5 checksum verification.", ESP_LOG_ERROR);
+    log("MD5 is not correct length. Leave empty for no MD5 checksum verification. Expected length: 32, got " +
+            std::to_string(md5hash.length()),
+        ESP_LOG_ERROR);
     return false;
   }
 
