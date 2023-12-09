@@ -2,6 +2,7 @@
 #define __ESP_NOW_NODE_H__
 
 #include "Preferences.h"
+#include "impl/EspNowOta.h"
 #include <EspNowCrypt.h>
 #include <esp_log.h>
 #include <esp_netif.h>
@@ -38,14 +39,28 @@ public:
   typedef std::function<void(const std::string message, const esp_log_level_t log_level)> OnLog;
 
   /**
+   * @brief CRT Bundle Attach for Ardunio or ESP-IDF from MDTLS, to support TLS/HTTPS firmware URIs.
+   *
+   * Include esp_crt_bundle.h and pass the following when using respective framework:
+   * for Arduino: arduino_esp_crt_bundle_attach
+   * for ESP-IDF: esp_crt_bundle_attach
+   *
+   * C style function.
+   */
+  typedef EspNowOta::CrtBundleAttach CrtBundleAttach;
+
+  /**
    * @brief Construct a new EspNowNode.
    *
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
    * @param preferences the EspNowNetwork::Preferences to use for storing/reading preferences.
    * @param firmware_version the (incremental) firmware version that this node is currently running.
    * @param on_log callback when the host want to log something.
+   * @param crt_bundle_attach crt_bundle_attach for either Ardunio (arduino_esp_crt_bundle_attach) or ESP-IDF
+   * (esp_crt_bundle_attach).
    */
-  EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version, OnLog on_log = {});
+  EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version, OnLog on_log = {},
+             CrtBundleAttach crt_bundle_attach = nullptr);
 
 public:
   /**
@@ -119,6 +134,7 @@ private:
   uint32_t _firmware_version;
   bool _setup_successful = false;
   uint8_t _esp_now_host_address[6];
+  CrtBundleAttach _crt_bundle_attach;
   EspNowNetwork::Preferences &_preferences;
 };
 

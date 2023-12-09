@@ -27,7 +27,18 @@ public:
    */
   typedef std::function<void(const std::string message, const esp_log_level_t log_level)> OnLog;
 
-  EspNowOta(OnLog on_log = {});
+  /**
+   * @brief CRT Bundle Attach for Ardunio or ESP-IDF from MDTLS, to support TLS/HTTPS firmware URIs.
+   *
+   * Include esp_crt_bundle.h and pass the following when using respective framework:
+   * for Arduino: arduino_esp_crt_bundle_attach
+   * for ESP-IDF: esp_crt_bundle_attach
+   *
+   * C style function.
+   */
+  typedef esp_err_t (*CrtBundleAttach)(void *conf);
+
+  EspNowOta(OnLog on_log = {}, CrtBundleAttach crt_bundle_attach = nullptr);
 
   /**
    * @brief Connect to wifi.
@@ -37,8 +48,11 @@ public:
   /**
    * @brief Try to update firmware from the given URL.
    * WiFi needs to be established first.
+   *
+   * @param url url to update from.
+   * @param md5_hash 32 string character MD5 hash to validate written firmware against. Empty to not validate.
    */
-  bool updateFrom(std::string &url, std::string md5hash = "");
+  bool updateFrom(std::string &url, std::string md5_hash = "");
 
 private:
   int fillBuffer(esp_http_client_handle_t client, char *buffer, size_t buffer_size);
@@ -62,6 +76,7 @@ private:
   esp_ip4_addr_t _ip_addr;
   uint16_t _wifi_num_retries = 0;
   uint16_t _wifi_retry_number = 0;
+  CrtBundleAttach _crt_bundle_attach;
   EventGroupHandle_t _wifi_event_group;
 
 private:

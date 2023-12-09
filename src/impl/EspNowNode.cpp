@@ -70,8 +70,9 @@ void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uin
 #endif
 
 EspNowNode::EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version,
-                       OnLog on_log)
-    : _on_log(on_log), _crypt(crypt), _firmware_version(firmware_version), _preferences(preferences) {}
+                       OnLog on_log, CrtBundleAttach crt_bundle_attach)
+    : _on_log(on_log), _crypt(crypt), _firmware_version(firmware_version), _crt_bundle_attach(crt_bundle_attach),
+      _preferences(preferences) {}
 
 bool EspNowNode::setup() {
   if (_setup_successful) {
@@ -378,7 +379,8 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
 
   // Connect to wifi.
   EspNowOta _esp_now_ota(
-      [&](const std::string message, const esp_log_level_t log_level) { log("EspNowOta: " + message, log_level); });
+      [&](const std::string message, const esp_log_level_t log_level) { log("EspNowOta: " + message, log_level); },
+      _crt_bundle_attach);
 
   uint16_t retries = 2;
   unsigned long connect_timeout_ms = 15000;

@@ -2,6 +2,7 @@
 #include <EspNowCrypt.h>
 #include <EspNowNode.h>
 #include <EspNowPreferences.h>
+#include <esp_crt_bundle.h>
 
 #define SLEEP_TIME_US (1000LL * 1000LL * 60LL * 1LL) // 1 minute
 
@@ -66,7 +67,8 @@ EspNowNode::OnLog _on_log = [](const std::string message, const esp_log_level_t 
 
 EspNowPreferences _esp_now_preferences;
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
-EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_log);
+EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_log,
+                         arduino_esp_crt_bundle_attach);
 
 void setup() {
   Serial.begin(115200);

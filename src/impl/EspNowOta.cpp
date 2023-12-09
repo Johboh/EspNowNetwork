@@ -2,7 +2,6 @@
 
 #include "EspNowMD5Builder.h"
 #include <esp_app_format.h>
-#include <esp_crt_bundle.h>
 #include <esp_flash_partitions.h>
 #include <esp_log.h>
 #include <esp_mac.h>
@@ -31,7 +30,10 @@
 #define SPI_SECTORS_PER_BLOCK 16 // usually large erase block is 32k/64k
 #define SPI_FLASH_BLOCK_SIZE (SPI_SECTORS_PER_BLOCK * SPI_FLASH_SEC_SIZE)
 
-EspNowOta::EspNowOta(OnLog on_log) : _on_log(on_log) { _wifi_event_group = xEventGroupCreate(); }
+EspNowOta::EspNowOta(OnLog on_log, CrtBundleAttach crt_bundle_attach)
+    : _on_log(on_log), _crt_bundle_attach(crt_bundle_attach) {
+  _wifi_event_group = xEventGroupCreate();
+}
 
 void EspNowOta::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   EspNowOta *wrapper = (EspNowOta *)arg;
@@ -108,7 +110,7 @@ bool EspNowOta::connectToWiFi(const char *ssid, const char *password, unsigned l
   return false;
 }
 
-bool EspNowOta::updateFrom(std::string &url, std::string md5hash) {
+bool EspNowOta::updateFrom(std::string &url, std::string md5_hash) {
   auto *partition = esp_ota_get_next_update_partition(NULL);
   if (!partition) {
     log("Unable to find OTA partition", ESP_LOG_ERROR);
@@ -116,14 +118,14 @@ bool EspNowOta::updateFrom(std::string &url, std::string md5hash) {
   }
   log("Found partition " + std::string(partition->label), ESP_LOG_INFO);
 
-  if (!md5hash.empty() && md5hash.length() != 32) {
+  if (!md5_hash.empty() && md5_hash.length() != 32) {
     log("MD5 is not correct length. Leave empty for no MD5 checksum verification. Expected length: 32, got " +
-            std::to_string(md5hash.length()),
+            std::to_string(md5_hash.length()),
         ESP_LOG_ERROR);
     return false;
   }
 
-  return downloadAndWriteToPartition(partition, url, md5hash);
+  return downloadAndWriteToPartition(partition, url, md5_hash);
 }
 
 esp_err_t EspNowOta::httpEventHandler(esp_http_client_event_t *evt) {
@@ -172,13 +174,12 @@ bool EspNowOta::downloadAndWriteToPartition(const esp_partition_t *partition, st
   config.user_data = this;
   config.event_handler = httpEventHandler;
   config.buffer_size = SPI_FLASH_SEC_SIZE;
-  /*#if PIOFRAMEWORK == "arduino"
-    config.crt_bundle_attach = arduino_esp_crt_bundle_attach;
-  #elif PIOFRAMEWORK == "espidf"
-    config.crt_bundle_attach = esp_crt_bundle_attach;
-  #else
-  #error "PIOFRAMEWORK is either not defined in platformio.ini or framework is not supported."
-  #endif*/
+  if (_crt_bundle_attach) {
+    config.crt_bundle_attach = _crt_bundle_attach;
+    log("With TLS/HTTPS support", ESP_LOG_INFO);
+  } else {
+    log("Without TLS/HTTPS support", ESP_LOG_INFO);
+  }
   esp_http_client_handle_t client = esp_http_client_init(&config);
 
   log("Using URL " + url, ESP_LOG_INFO);
