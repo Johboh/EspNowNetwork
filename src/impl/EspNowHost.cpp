@@ -63,6 +63,14 @@ EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::WiFiInterface wifi_interf
       _firwmare_update(firwmare_update), _on_application_message(on_application_message) {}
 
 bool EspNowHost::setup() {
+#if CONFIG_IDF_TARGET_ESP32C6 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+  uint8_t protocol_bitmap =
+      WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX | WIFI_PROTOCOL_LR;
+#else
+  uint8_t protocol_bitmap = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR;
+#endif
+  ESP_ERROR_CHECK(esp_wifi_set_protocol(WIFI_IF_STA, protocol_bitmap));
+
   esp_err_t r = esp_now_init();
   if (r != 0) {
     log("Error initializing ESP-NOW:", r);

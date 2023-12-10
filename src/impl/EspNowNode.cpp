@@ -88,12 +88,11 @@ bool EspNowNode::setup() {
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_start());
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-  uint8_t protocol_bitmap = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N |
-                            WIFI_PROTOCOL_11AX; // WIFI_PROTOCOL_LR? Failed to set this.
-#else
+#if CONFIG_IDF_TARGET_ESP32C6 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
   uint8_t protocol_bitmap =
-      WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N; // WIFI_PROTOCOL_LR? Failed to set this.
+      WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX | WIFI_PROTOCOL_LR;
+#else
+  uint8_t protocol_bitmap = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR;
 #endif
   ESP_ERROR_CHECK(esp_wifi_set_protocol(WIFI_IF_STA, protocol_bitmap));
 
@@ -107,12 +106,10 @@ bool EspNowNode::setup() {
     log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
   }
 
-// Set rate for IDF <5.1 (Errata: This might need to be called before esp_now_init():
-// https://github.com/espressif/esp-idf/issues/11751)
-#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0)
+  // Deprecated, but esp_now_set_peer_rate_config(peer_info.peer_addr, &esp_now_rate_config); does not work.
+  // See https://github.com/espressif/esp-idf/issues/11751 and https://www.esp32.com/viewtopic.php?t=34546
   r = esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_LORA_250K);
   log("configuring espnow rate (legacy) failed:", r);
-#endif
 
   r = esp_now_register_send_cb(esp_now_on_data_sent);
   log("Registering send callback for esp now failed:", r);
@@ -152,15 +149,6 @@ bool EspNowNode::setup() {
   if (!success) {
     log("Per adding failure:", r);
   }
-
-// Set rate for IDF 5.1+
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-  esp_now_rate_config_t esp_now_rate_config = {};
-  esp_now_rate_config.phymode = WIFI_PHY_MODE_LR;
-  esp_now_rate_config.rate = WIFI_PHY_RATE_LORA_250K;
-  r = esp_now_set_peer_rate_config(peer_info.peer_addr, &esp_now_rate_config);
-  log("Peer set rate config failed:", r);
-#endif
 
   if (!presumably_valid_host_mac_address) {
     // Ok so we have no valid host MAC address.
