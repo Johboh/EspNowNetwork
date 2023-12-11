@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 
 
-Arduino library for setting up a network of ESP NOW nodes
+Arduino and ESP-IDF compatible library for setting up a network of ESP NOW nodes
 
 ### Usage/Purpose
 The use case for the EspNowNetwork is to run a a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network for battery powered sensors.
@@ -15,11 +15,26 @@ Features:
 - **Generic firmware**: For boards that do the same thing (e.g. they have the same hardware), the same firmware can be used for all of them. No unique ID is required to be programmed into each board/node.
 - **Over The Air/OTA**: A node can be updated Over The Air. The node report their firmware version upon handsake, and the host can send back wifi credentials and an URL where to download the new firmware. The node will download the firmware, write it and restart.
 
+### Installation
+#### Platform I/O:
+Add the following to `libs_deps`:
+```
+   Johboh/EspNowNetwork
+```
+#### ESP-IDF:
+In your existing `idf_component.yml` or in a new `idf_component.yml` next to your main component:
+```
+dependencies:
+  EspNowNetwork:
+    git: https://github.com/Johboh/EspNowNetwork.git
+```
+
 ### Example
 See [host example](examples/Host/Host.ino) and [node example](examples/Node/Node.ino).
 
 ### Functionallity verified on the following platforms and frameworks
 - ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@5.1.1](https://github.com/espressif/esp-idf) on ESP32-S2 and ESP32-C3)
+- ESP-IDF 5.1.2 using ESP32-C6
 
 Newer version most probably work too, but they have not been verified.
 

@@ -88,12 +88,11 @@ bool EspNowNode::setup() {
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_start());
-#if CONFIG_IDF_TARGET_ESP32C6 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-  uint8_t protocol_bitmap =
-      WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX | WIFI_PROTOCOL_LR;
-#else
+
+  // TODO(johboh): this might unset WIFI6 for ESP32-C6, but getting current protocols and appending WIFI_PROTOCOL_LR and
+  // then setting them again, fails with bad argument. Presumably a bug in esp_wifi_set_protocol not supporting
+  // WIFI_PROTOCOL_11AX?
   uint8_t protocol_bitmap = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR;
-#endif
   ESP_ERROR_CHECK(esp_wifi_set_protocol(WIFI_IF_STA, protocol_bitmap));
 
   // Init ESP-NOW
