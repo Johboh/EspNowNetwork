@@ -4,8 +4,10 @@
 #include "Preferences.h"
 #include "impl/EspNowOta.h"
 #include <EspNowCrypt.h>
+#include <esp_idf_version.h>
 #include <esp_log.h>
 #include <esp_netif.h>
+#include <esp_now.h>
 #include <functional>
 #include <string>
 
@@ -107,6 +109,12 @@ public:
   void forgetHost();
 
 private:
+  static void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status);
+  static void esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *data, int data_len);
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+  static void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len);
+#endif
+
   void sendMessageInternal(uint8_t *buff, size_t length);
 
   /**
@@ -144,9 +152,9 @@ private:
   esp_netif_t *_netif_sta;
   uint32_t _firmware_version;
   bool _setup_successful = false;
-  uint8_t _esp_now_host_address[6];
   CrtBundleAttach _crt_bundle_attach;
   EspNowNetwork::Preferences &_preferences;
+  uint8_t _esp_now_host_address[ESP_NOW_ETH_ALEN];
 };
 
 #endif // __ESP_NOW_NODE_H__

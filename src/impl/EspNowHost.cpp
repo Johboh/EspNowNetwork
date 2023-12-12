@@ -2,7 +2,6 @@
 
 #include "esp-now-structs.h"
 #include <cstring>
-#include <esp_now.h>
 #include <esp_random.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
@@ -19,10 +18,10 @@ struct Element {
   uint8_t mac_addr[ESP_NOW_ETH_ALEN];
 };
 
-auto _send_result_event_group = xEventGroupCreate();
-auto _receive_queue = xQueueCreate(10, sizeof(Element));
+static QueueHandle_t _receive_queue = xQueueCreate(10, sizeof(Element));
+static EventGroupHandle_t _send_result_event_group = xEventGroupCreate();
 
-void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void EspNowHost::esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   // Set event bits based on result.
   auto xHigherPriorityTaskWoken = pdFALSE;
   auto result = xEventGroupSetBitsFromISR(_send_result_event_group,
@@ -33,7 +32,7 @@ void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status)
   }
 }
 
-void esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+void EspNowHost::esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   // New message received on ESP-NOW.
   // Add to queue and leave callback as soon as we can.
   Element element;
@@ -51,7 +50,7 @@ void esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *dat
 }
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
+void EspNowHost::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
   esp_now_on_data_callback_legacy(esp_now_info->src_addr, data, data_len);
 }
 #endif

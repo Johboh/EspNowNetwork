@@ -1,9 +1,8 @@
+#include <EspNowNode.h>
+
 #include "EspNowOta.h"
 #include "esp-now-structs.h"
-#include <EspNowNode.h>
 #include <cstring>
-#include <esp_idf_version.h>
-#include <esp_now.h>
 #include <esp_random.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
@@ -24,18 +23,16 @@
 // between each message.
 #define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 50
 
-// Cannot be class members, as C callback esp_now_on_data_sent is not in class...
-auto _send_result_event_group = xEventGroupCreate();
-
 struct Element {
   size_t data_len = 0;
   uint8_t data[255]; // Max message size on ESP NOW is 250.
   uint8_t mac_addr[ESP_NOW_ETH_ALEN];
 };
 
-auto _receive_queue = xQueueCreate(5, sizeof(Element));
+static QueueHandle_t _receive_queue = xQueueCreate(5, sizeof(Element));
+static EventGroupHandle_t _send_result_event_group = xEventGroupCreate();
 
-void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void EspNowNode::esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   // Set event bits based on result.
   auto xHigherPriorityTaskWoken = pdFALSE;
   auto result = xEventGroupSetBitsFromISR(_send_result_event_group,
@@ -46,7 +43,7 @@ void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status)
   }
 }
 
-void esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+void EspNowNode::esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   // New message received on ESP-NOW.
   // Add to queue and leave callback as soon as we can.
   Element element;
@@ -64,7 +61,7 @@ void esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *dat
 }
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
+void EspNowNode::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
   esp_now_on_data_callback_legacy(esp_now_info->src_addr, data, data_len);
 }
 #endif

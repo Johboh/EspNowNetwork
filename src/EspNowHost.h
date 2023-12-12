@@ -2,7 +2,9 @@
 #define __ESP_NOW_HOST_H__
 
 #include <EspNowCrypt.h>
+#include <esp_idf_version.h>
 #include <esp_log.h>
+#include <esp_now.h>
 #include <functional>
 #include <map>
 #include <optional>
@@ -108,6 +110,12 @@ public:
   void handle();
 
 private:
+  static void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status);
+  static void esp_now_on_data_callback_legacy(const uint8_t *mac_addr, const uint8_t *data, int data_len);
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+  static void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len);
+#endif
+
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
   void handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge);
   void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version);

@@ -1,5 +1,5 @@
-version: "0.3.6"
+version: "0.3.7"
 description: Arduino/ESP-IDF library for setting up a network of ESP NOW nodes
 url: https://github.com/Johboh/EspNowNetwork
 dependencies:
-  idf: ">=4.3"
+  idf: ">=4.4"
