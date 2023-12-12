@@ -192,6 +192,20 @@ bool EspNowNode::setup() {
   return success;
 }
 
+void EspNowNode::teardown() {
+  _setup_successful = false;
+  memset(_esp_now_host_address, 0x00, ESP_NOW_ETH_ALEN);
+
+  esp_wifi_stop();
+  if (_netif_sta != nullptr) {
+    esp_netif_destroy_default_wifi(_netif_sta);
+  }
+  esp_event_loop_delete_default();
+  esp_netif_deinit();
+  esp_now_deinit();
+  esp_wifi_deinit();
+}
+
 bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries) {
   if (!_setup_successful) {
     return false;
@@ -357,12 +371,7 @@ void EspNowNode::log(const std::string message, const esp_err_t esp_err) {
 
 void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, char *md5) {
   // Stop ESP-NOW and any other wifi related things before trying to update firmware.
-  esp_wifi_stop();
-  esp_netif_destroy_default_wifi(_netif_sta);
-  esp_event_loop_delete_default();
-  esp_netif_deinit();
-  esp_now_deinit();
-  esp_wifi_deinit();
+  teardown();
 
   // Connect to wifi.
   EspNowOta _esp_now_ota(
@@ -372,7 +381,7 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   uint16_t retries = 2;
   unsigned long connect_timeout_ms = 15000;
   if (!_esp_now_ota.connectToWiFi(wifi_ssid, wifi_password, connect_timeout_ms, retries)) {
-    log("Connection to WiFi failed!", ESP_LOG_ERROR);
+    log("Connection to WiFi failed! Restarting...", ESP_LOG_ERROR);
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_restart();
   }

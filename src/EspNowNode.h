@@ -72,8 +72,19 @@ public:
    * After the ESP-NOW is setup, a broadcast disovery request message is sent. A EspNowHost device will reply to this.
    * Upon reply, the MAC address will be persisted to Preferences/Flash, and the device will reboot.
    * If there is no valid reply (after a certain number of retries to discover a host), this method will return false.
+   *
+   * Note that as ESP-NOW depend on WiFi, the EspNowNode will not work togheter with WiFi. It assumes no WiFi is
+   * previosly setup or will be setup. A node is supposed to use Esp-NOW only as means of communication.
    */
   bool setup();
+
+  /**
+   * @brief Tear down any esp now/wifi setup. This will invalidate the state and another setup call is needed afte this.
+   * Useful to call before any kind of sleep or similar.
+   * Note that as ESP-NOW rely on wifi, this will also stop any WiFi. However, nodes should not have WiFi and ESP-NOW at
+   * the same time to begin with.
+   */
+  void teardown();
 
   /**
    * @brief Send a message to the host (see setup()). Can only be called after a successful setup().
