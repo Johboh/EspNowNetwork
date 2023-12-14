@@ -40,6 +40,64 @@ public:
    */
   typedef std::function<void(const std::string message, const esp_log_level_t log_level)> OnLog;
 
+  enum class Status {
+    /**
+     * @brief We don't know about the MAC host address, so starting the disovery process to find the host MAC.
+     */
+    HOST_DISCOVERY_STARTED,
+
+    /**
+     * @brief The host MAC was found. The device will be restarted (using esp_restart()).
+     * TODO(johboh): Consider making the restart optional?
+     */
+    HOST_DISCOVERY_SUCCESSFUL,
+
+    /**
+     * @brief Unable to find the host MAC. This is most probably due to the host being offline.
+     */
+    HOST_DISCOVERY_FAILED,
+
+    /**
+     * @brief Host failed to acknowledge messages when trying to send a message. The persisted host is most probably
+     * invalid. The host has now been forgotten, and a new setup is needed. The device will be restarted (using
+     * esp_restart()).
+     * TODO(johboh): Consider making the restart optional?
+     */
+    INVALID_HOST,
+
+    /**
+     * @brief The host indicated that a firmware update is needed, and such, a firmware update has started.
+     * This will follow by a FIRMWARE_UPDATE_SUCCESSFUL or FIRMWARE_UPDATE_FAILED/FIRMWARE_UPDATE_WIFI_SETUP_FAILED.
+     */
+    FIRMWARE_UPDATE_STARTED,
+
+    /**
+     * @brief Firmware update succeeded. The device will be restarted (using esp_restart()).
+     * TODO(johboh): Consider making the restart optional?
+     */
+    FIRMWARE_UPDATE_SUCCESSFUL,
+
+    /**
+     * @brief Firmware update failed. The device will be restarted (using esp_restart()).
+     * TODO(johboh): Consider making the restart optional?
+     */
+    FIRMWARE_UPDATE_FAILED,
+
+    /**
+     * @brief Firmware update failed as was unable to setup WiFi. The device will be restarted (using esp_restart()).
+     * TODO(johboh): Consider making the restart optional?
+     */
+    FIRMWARE_UPDATE_WIFI_SETUP_FAILED,
+  };
+
+  /**
+   * @brief Callback on status changes. See Status enum on the different statuses available and suggestion on how to
+   * handle them.
+   *
+   * @param status the new current status.
+   */
+  typedef std::function<void(const Status status)> OnStatus;
+
   /**
    * @brief CRT Bundle Attach for Ardunio or ESP-IDF from MDTLS, to support TLS/HTTPS firmware URIs.
    *
@@ -57,12 +115,14 @@ public:
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
    * @param preferences the EspNowNetwork::Preferences to use for storing/reading preferences.
    * @param firmware_version the (incremental) firmware version that this node is currently running.
+   * @param on_status callback on status changes. See Status enum on the different statuses available and suggestion on
+   * how to handle them.
    * @param on_log callback when the host want to log something.
    * @param crt_bundle_attach crt_bundle_attach for either Ardunio (arduino_esp_crt_bundle_attach) or ESP-IDF
    * (esp_crt_bundle_attach).
    */
-  EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version, OnLog on_log = {},
-             CrtBundleAttach crt_bundle_attach = nullptr);
+  EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version,
+             OnStatus on_status = {}, OnLog on_log = {}, CrtBundleAttach crt_bundle_attach = nullptr);
 
 public:
   /**
@@ -148,6 +208,7 @@ private:
 
 private:
   OnLog _on_log;
+  OnStatus _on_status;
   EspNowCrypt &_crypt;
   esp_netif_t *_netif_sta;
   uint32_t _firmware_version;

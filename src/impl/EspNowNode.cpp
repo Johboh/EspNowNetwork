@@ -67,9 +67,9 @@ void EspNowNode::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_inf
 #endif
 
 EspNowNode::EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version,
-                       OnLog on_log, CrtBundleAttach crt_bundle_attach)
-    : _on_log(on_log), _crypt(crypt), _firmware_version(firmware_version), _crt_bundle_attach(crt_bundle_attach),
-      _preferences(preferences) {}
+                       OnStatus on_status, OnLog on_log, CrtBundleAttach crt_bundle_attach)
+    : _on_log(on_log), _on_status(on_status), _crypt(crypt), _firmware_version(firmware_version),
+      _crt_bundle_attach(crt_bundle_attach), _preferences(preferences) {}
 
 bool EspNowNode::setup() {
   if (_setup_successful) {
@@ -147,6 +147,9 @@ bool EspNowNode::setup() {
   }
 
   if (!presumably_valid_host_mac_address) {
+    if (_on_status) {
+      _on_status(Status::HOST_DISCOVERY_STARTED);
+    }
     // Ok so we have no valid host MAC address.
     // Announce our precence until we get a reply.
 
@@ -173,10 +176,16 @@ bool EspNowNode::setup() {
         log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
         _preferences.espNowSetMacForHost(mac_addr);
         _preferences.commit();
+        if (_on_status) {
+          _on_status(Status::HOST_DISCOVERY_SUCCESSFUL);
+        }
         esp_restart(); // Start over from the begining.
       }
 
       // No message/timeout or failed to verify. Try again.
+    }
+    if (_on_status) {
+      _on_status(Status::HOST_DISCOVERY_FAILED);
     }
     log("Failed to discover host. Setup failed.", ESP_LOG_ERROR);
 
@@ -269,8 +278,11 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
     // Sad times. We have no challenge. No point in continuing.
     // Assume host is broken.
     forgetHost();
+    if (_on_status) {
+      _on_status(Status::INVALID_HOST);
+    }
     esp_restart();
-    return false; // Unreachable, but just in case.
+    return false; // Unreachable, but just in case.§
   }
 
   uint32_t size = sizeof(EspNowMessageHeaderV1) + message_size;
@@ -367,6 +379,10 @@ void EspNowNode::log(const std::string message, const esp_err_t esp_err) {
 }
 
 void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, char *md5) {
+  if (_on_status) {
+    _on_status(Status::FIRMWARE_UPDATE_STARTED);
+  }
+
   // Stop ESP-NOW and any other wifi related things before trying to update firmware.
   teardown();
 
@@ -379,6 +395,9 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   unsigned long connect_timeout_ms = 15000;
   if (!_esp_now_ota.connectToWiFi(wifi_ssid, wifi_password, connect_timeout_ms, retries)) {
     log("Connection to WiFi failed! Restarting...", ESP_LOG_ERROR);
+    if (_on_status) {
+      _on_status(Status::FIRMWARE_UPDATE_WIFI_SETUP_FAILED);
+    }
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_restart();
   }
@@ -391,8 +410,14 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
 
   if (success) {
     log("Firwmare update successful. Rebooting.", ESP_LOG_INFO);
+    if (_on_status) {
+      _on_status(Status::FIRMWARE_UPDATE_SUCCESSFUL);
+    }
   } else {
     log("Firwmare update failed. Rebooting.", ESP_LOG_ERROR);
+    if (_on_status) {
+      _on_status(Status::FIRMWARE_UPDATE_FAILED);
+    }
   }
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   esp_restart();
