@@ -88,7 +88,7 @@ EspNowNode::OnStatus _on_status = [](EspNowNode::Status status) {
 
 EspNowPreferences _esp_now_preferences;
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
-EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_log, _on_status,
+EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_status, _on_log,
                          arduino_esp_crt_bundle_attach);
 
 void setup() {
