@@ -1,5 +1,6 @@
 # EspNowNetwork
 [![Test](https://github.com/Johboh/EspNowNetwork/actions/workflows/test.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork/actions/workflows/test.yaml)
+[![Test](https://github.com/Johboh/EspNowNetwork/actions/workflows/esp_upload_component.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork/actions/workflows/esp_upload_component.yaml)
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 
 
