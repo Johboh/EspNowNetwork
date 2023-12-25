@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 
 
-Arduino and ESP-IDF compatible library for setting up a network of ESP NOW nodes
+Arduino (using Arduino IDE or Platform I/O) and ESP-IDF (using Espressif IoT Development Framework or Platform I/O) compatible library for setting up a network of ESP NOW nodes
 
 ### Usage/Purpose
 The use case for the EspNowNetwork is to run a a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network for battery powered sensors.
@@ -16,20 +16,20 @@ Features:
 - **Over The Air/OTA**: A node can be updated Over The Air. The node report their firmware version upon handsake, and the host can send back wifi credentials and an URL where to download the new firmware. The node will download the firmware, write it and restart.
 
 ### Installation
-#### Platform I/O:
+#### Platform I/O (Arduino or ESP-IDF):
 Add the following to `libs_deps`:
 ```
    Johboh/EspNowNetwork
 ```
-#### ESP-IDF:
+#### Espressif IoT Development Framework:
 In your existing `idf_component.yml` or in a new `idf_component.yml` next to your main component:
 ```
 dependencies:
-  EspNowNetwork:
-    git: https://github.com/Johboh/EspNowNetwork.git
+  johboh/EspNowNetwork:
+    version: ">=0.4.0"
 ```
 
-### Example
+### Example (Arduino framework)
 See [host example](examples/Host/Host.ino) and [node example](examples/Node/Node.ino).
 
 ### Functionallity verified on the following platforms and frameworks

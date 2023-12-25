@@ -1,7 +1,7 @@
 {
   "name": "EspNowNetwork",
   "keywords": "esp32, esp-now, ESP Now, now",
-  "description": "Arduino/ESP-IDF library for setting up a network of ESP NOW nodes",
+  "description": "Library for setting up a network of ESP NOW nodes",
   "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
   "authors":
   {
@@ -19,5 +19,17 @@
   },
   "frameworks": ["espidf", "arduino"],
   "platforms": ["espressif32"],
+  "examples": [
+    {
+      "name": "Host",
+      "base": "examples/host",
+      "files": ["Host.ino"]
+    },
+    {
+      "name": "Node",
+      "base": "examples/Node",
+      "files": ["Node.ino"]
+    }
+  ],
   "dependencies": []
 }
