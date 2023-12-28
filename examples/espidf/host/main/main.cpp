@@ -47,7 +47,7 @@ EspNowHost::OnApplicationMessage _on_application_message = [](EspNowHost::Messag
                                                               const uint8_t *message) {
   // Callback for new application messages.
   auto id = message[0];
-  ESP_LOGI(TAG, "Got message from 0x%02x with ID %lld", metadata.mac_address, id);
+  ESP_LOGI(TAG, "Got message from 0x%02llx with ID %d", metadata.mac_address, id);
   switch (id) {
   case 0x01: {
     MyApplicationMessage *msg = (MyApplicationMessage *)message;
