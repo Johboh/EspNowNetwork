@@ -1,6 +1,7 @@
 # EspNowNetwork
-[![Test](https://github.com/Johboh/EspNowNetwork/actions/workflows/test.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetwork)
-[![Test](https://github.com/Johboh/EspNowNetwork/actions/workflows/esp_upload_component.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetwork)
+[![Platform I/O CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetwork)
+[![ESP-IDF CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml)
+[![ESP-IDF Component Upload](https://github.com/Johboh/EspNowNetwork/actions/workflows/esp_upload_component.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetwork)
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 
 
@@ -30,12 +31,14 @@ dependencies:
     version: ">=0.4.0"
 ```
 
-### Example (Arduino framework)
-See [host example](examples/Host/Host.ino) and [node example](examples/Node/Node.ino).
+### Examples
+- [Arduino: Host](examples/arduino/host/Host.ino)
+- [Arduino: Node](examples/arduino/node/Node.ino)
+- [ESP-IDF: Host](examples/espidf/host/main/main.cpp)
+- [ESP-IDF: Host](examples/espidf/node/main/main.cpp)
 
 ### Functionallity verified on the following platforms and frameworks
-- ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@5.1.1](https://github.com/espressif/esp-idf) on ESP32-S2 and ESP32-C3)
-- ESP-IDF 5.1.2 using ESP32-C6
+- ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@4.4.6](https://github.com/espressif/esp-idf) / [ESP-IDF@5.1.2](https://github.com/espressif/esp-idf) on ESP32-S2 and ESP32-C3)
 
 Newer version most probably work too, but they have not been verified.
 

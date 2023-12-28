@@ -1,0 +1,5 @@
+dependencies:
+  johboh/EspNowNetwork:
+    #version: ">=0.4.0"
+    # Remove path and enable version to use EspNowNetwork from repository
+    path: ../../../../
