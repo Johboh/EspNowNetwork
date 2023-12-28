@@ -125,8 +125,6 @@ void setup() {
 }
 
 void loop() {
-  _esp_now_host.handle();
-
   if (_turn_of_led_at_ms > 0 && millis() > _turn_of_led_at_ms) {
     digitalWrite(LED_PIN, LOW);
     _turn_of_led_at_ms = -1;
