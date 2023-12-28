@@ -1,4 +1,4 @@
-version: "0.4.0"
+version: "0.5.0"
 description: Library for setting up a network of ESP NOW nodes
 url: https://github.com/Johboh/EspNowNetwork
 dependencies:

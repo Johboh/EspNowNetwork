@@ -18,7 +18,7 @@
  * A common setup is that the host is also connecting to WiFi and forward all incoming messages to for example MQTT.
  *
  * The Host part of the EspNowNetwork supports the following:
- * - Setting up ESP-NOW: setup().
+ * - Setting up ESP-NOW: start().
  * - Listen for (and responds to) discovery requests from nodes (for nodes to disover the host).
  * - Listen for (and responds to) challenge requests from nodes (for encryption reply attacks protection).
  * - forwards all incoming application messages in the lambda callback.
@@ -100,14 +100,10 @@ public:
 
 public:
   /**
-   * @brief Setup the ESP-NOW stack. Preferably called from Arduino main setup() function.
+   * @brief Setup the ESP-NOW stack.
    */
-  bool setup();
-
-  /**
-   * @brief Call to process queue and others. Should be called from Arduino main loop()
-   */
-  void handle();
+  bool start();
+  bool setup() { return start(); }
 
 private:
   static void esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status);
@@ -115,6 +111,9 @@ private:
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
   static void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len);
 #endif
+
+  static void newMessageTask(void *pvParameters);
+  static void messageDeliveredTask(void *pvParameters);
 
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
   void handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge);

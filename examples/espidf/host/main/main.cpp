@@ -81,6 +81,12 @@ void app_main();
 }
 
 void app_main(void) {
+  if (!_esp_now_host.start()) {
+    ESP_LOGE(TAG, "Failed to start host.");
+  } else {
+    ESP_LOGE(TAG, "Host started.");
+  }
+
   while (1) {
     vTaskDelay(500 / portTICK_PERIOD_MS);
     fflush(stdout);

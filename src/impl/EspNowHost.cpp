@@ -61,7 +61,44 @@ EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::WiFiInterface wifi_interf
     : _crypt(crypt), _wifi_interface(wifi_interface), _on_log(on_log), _on_new_message(on_new_message),
       _firwmare_update(firwmare_update), _on_application_message(on_application_message) {}
 
-bool EspNowHost::setup() {
+void EspNowHost::newMessageTask(void *pvParameters) {
+  EspNowHost *_this = (EspNowHost *)pvParameters;
+
+  while (1) {
+    Element element;
+    auto result = xQueueReceive(_receive_queue, &element, portMAX_DELAY);
+    if (result == pdPASS) {
+      // We have a new message!
+      if (_this->_on_new_message) {
+        _this->_on_new_message(); // Notify.
+      }
+
+      auto decrypted_data = _this->_crypt.decryptMessage(element.data);
+      if (decrypted_data != nullptr) {
+        _this->handleQueuedMessage(element.mac_addr, decrypted_data.get());
+      } else {
+        uint64_t mac_address = _this->macToMac(element.mac_addr);
+        _this->log("Failed to decrypt message received from 0x" + _this->toHex(mac_address), ESP_LOG_WARN);
+      }
+    }
+  }
+}
+void EspNowHost::messageDeliveredTask(void *pvParameters) {
+  EspNowHost *_this = (EspNowHost *)pvParameters;
+
+  while (1) {
+    auto bits =
+        xEventGroupWaitBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
+    if ((bits & SEND_SUCCESS_BIT) != 0) {
+      _this->log("Message delivered.", ESP_LOG_INFO);
+    }
+    if ((bits & SEND_FAIL_BIT) != 0) {
+      _this->log("Message fail to deliver.", ESP_LOG_INFO);
+    }
+  }
+}
+
+bool EspNowHost::start() {
 #if CONFIG_IDF_TARGET_ESP32C6 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
   uint8_t protocol_bitmap =
       WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX | WIFI_PROTOCOL_LR;
@@ -89,34 +126,14 @@ bool EspNowHost::setup() {
   r = esp_now_register_send_cb(esp_now_on_data_sent);
   log("Registering send callback for esp now failed:", r);
 
-  return r == ESP_OK;
-}
+  auto ok = r == ESP_OK;
 
-void EspNowHost::handle() {
-  Element element;
-  auto result = xQueueReceive(_receive_queue, &element, 1); // Only wait one tick.
-  if (result == pdPASS) {
-    // We have a new message!
-    if (_on_new_message) {
-      _on_new_message(); // Notify.
-    }
-
-    auto decrypted_data = _crypt.decryptMessage(element.data);
-    if (decrypted_data != nullptr) {
-      handleQueuedMessage(element.mac_addr, decrypted_data.get());
-    } else {
-      uint64_t mac_address = macToMac(element.mac_addr);
-      log("Failed to decrypt message received from 0x" + toHex(mac_address), ESP_LOG_WARN);
-    }
+  if (ok) {
+    xTaskCreate(newMessageTask, "new_message_task", 4096, this, 5, NULL);
+    xTaskCreate(messageDeliveredTask, "message_delivered_task", 4096, this, 10, NULL);
   }
 
-  auto bits = xEventGroupWaitBits(_send_result_event_group, SEND_SUCCESS_BIT | SEND_FAIL_BIT, pdTRUE, pdFALSE, 1);
-  if ((bits & SEND_SUCCESS_BIT) != 0) {
-    log("Message delivered.", ESP_LOG_INFO);
-  }
-  if ((bits & SEND_FAIL_BIT) != 0) {
-    log("Message fail to deliver.", ESP_LOG_INFO);
-  }
+  return ok;
 }
 
 void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
