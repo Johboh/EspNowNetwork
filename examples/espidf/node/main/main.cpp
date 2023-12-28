@@ -1,7 +1,9 @@
 #include <EspNowCrypt.h>
 #include <EspNowNode.h>
 #include <EspNowPreferences.h>
+#include <esp_crt_bundle.h>
 #include <esp_log.h>
+#include <esp_sleep.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
