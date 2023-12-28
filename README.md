@@ -37,6 +37,20 @@ dependencies:
 - [ESP-IDF: Host](examples/espidf/host/main/main.cpp)
 - [ESP-IDF: Host](examples/espidf/node/main/main.cpp)
 
+### Parition table (for the Node)
+You need to have two app partitions in your parition table to be able to swap between otas. This is an example:
+```
+# Name,   Type,  SubType, Offset,          Size, Flags
+nvs,      data,      nvs,       ,           16K
+otadata,  data,      ota,       ,            8K
+phy_init, data,      phy,       ,            4K
+coredump, data, coredump,       ,           64K
+ota_0,     app,    ota_0,       ,         1500K
+ota_1,     app,    ota_1,       ,         1500K
+spiffs,   data,   spiffs,       ,          800K
+```
+To set partition table, save above in a file called `partitions_with_ota.csv`. For ESP-IDF, specify to use this one using menuconfig. For platform I/O, add the following to your `platformio.ini`: `board_build.partitions = partitions_with_ota.csv`
+
 ### Functionallity verified on the following platforms and frameworks
 - ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@4.4.6](https://github.com/espressif/esp-idf) / [ESP-IDF@5.1.2](https://github.com/espressif/esp-idf) on ESP32-S2 and ESP32-C3)
 
