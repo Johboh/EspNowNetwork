@@ -1,7 +1,6 @@
 # EspNowNetwork
 [![Platform I/O CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetwork)
-[![ESP-IDF CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml)
-[![ESP-IDF Component Upload](https://github.com/Johboh/EspNowNetwork/actions/workflows/esp_upload_component.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetwork)
+[![ESP-IDF CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetwork)
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 
 
