@@ -69,7 +69,7 @@ EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac
 
 EspNowHost::OnLog _on_log = [](const std::string message, const esp_log_level_t log_level) {
   // Callback for logging. Can be omitted.
-  esp_log_write(log_level, TAG, "EspNowNode: %s", message.c_str());
+  esp_log_write(log_level, TAG, "EspNowNode: %s\n", message.c_str());
 };
 
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
