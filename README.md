@@ -27,7 +27,7 @@ In your existing `idf_component.yml` or in a new `idf_component.yml` next to you
 ```
 dependencies:
   johboh/EspNowNetwork:
-    version: ">=0.5.0"
+    version: ">=0.5.1"
 ```
 
 ### Examples

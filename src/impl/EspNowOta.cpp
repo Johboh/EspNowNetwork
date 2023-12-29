@@ -288,10 +288,11 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
     }
 
     md5.add((uint8_t *)buffer, (uint16_t)bytes_filled);
+    bytes_read += bytes_filled;
 
     // If this is the end, finish up.
-    if (bytes_filled != SPI_FLASH_SEC_SIZE) {
-      log("This is the end", ESP_LOG_INFO);
+    if (bytes_read == content_length) {
+      log("End of stream, writing data to partition", ESP_LOG_INFO);
 
       if (!md5hash.empty()) {
         md5.calculate();
@@ -326,7 +327,6 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
       }
     }
 
-    bytes_read += bytes_filled;
     vTaskDelay(0); // Yield/reschedule
   }
 
