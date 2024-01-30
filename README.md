@@ -51,7 +51,7 @@ spiffs,   data,   spiffs,       ,          800K
 To set partition table, save above in a file called `partitions_with_ota.csv`. For ESP-IDF, specify to use this one using menuconfig. For platform I/O, add the following to your `platformio.ini`: `board_build.partitions = partitions_with_ota.csv`
 
 ### Functionallity verified on the following platforms and frameworks
-- ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@4.4.6](https://github.com/espressif/esp-idf) / [ESP-IDF@5.1.2](https://github.com/espressif/esp-idf) on ESP32-S2 and ESP32-C3)
+- ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@4.4.6](https://github.com/espressif/esp-idf) / [ESP-IDF@5.1.2](https://github.com/espressif/esp-idf) / [ESP-IDF@5.2.0](https://github.com/espressif/esp-idf) on ESP32-S2, ESP32-C3 and ESP32-C6)
 
 Newer version most probably work too, but they have not been verified.
 
