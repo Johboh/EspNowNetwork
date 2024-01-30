@@ -35,6 +35,19 @@ public:
   bool espNowGetMacForHost(uint8_t *buffer) override;
 
   /**
+   * @brief Set the WiFi channel that the host is on
+   */
+  bool espNowSetChannelForHost(uint8_t channel) override;
+
+  /**
+   * @brief Return the WiFi channel stored, or std::nullopt if no channel stored.
+   * @param buffer buffer to store channel
+   *
+   * @param return true if channel was read successfully.
+   */
+  bool espNowGetChannelForHost(uint8_t *buffer) override;
+
+  /**
    * @brief After setting variables, call this to commit/save.
    * @return true on success.
    */

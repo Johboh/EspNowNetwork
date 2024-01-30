@@ -1,5 +1,4 @@
 #include <EspNowNode.h>
-
 #include "EspNowOta.h"
 #include "esp-now-structs.h"
 #include <cstring>
@@ -23,6 +22,9 @@
 // between each message.
 #define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 50
 
+// wifi channels that will be tried during discovery
+#define WIFI_SCAN_CHANNELS {1,2,3,4,5,6,7,8,9,10,11,12,13,14}
+
 struct Element {
   size_t data_len = 0;
   uint8_t data[255]; // Max message size on ESP NOW is 250.
@@ -33,6 +35,7 @@ static QueueHandle_t _receive_queue = xQueueCreate(5, sizeof(Element));
 static EventGroupHandle_t _send_result_event_group = xEventGroupCreate();
 
 void EspNowNode::esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+
   // Set event bits based on result.
   auto xHigherPriorityTaskWoken = pdFALSE;
   auto result = xEventGroupSetBitsFromISR(_send_result_event_group,
@@ -84,8 +87,9 @@ bool EspNowNode::setup() {
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+  ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
   ESP_ERROR_CHECK(esp_wifi_start());
-
+  
   // TODO(johboh): this might unset WIFI6 for ESP32-C6, but getting current protocols and appending WIFI_PROTOCOL_LR and
   // then setting them again, fails with bad argument. Presumably a bug in esp_wifi_set_protocol not supporting
   // WIFI_PROTOCOL_11AX?
@@ -131,6 +135,12 @@ bool EspNowNode::setup() {
   bool presumably_valid_host_mac_address = _preferences.espNowGetMacForHost(_esp_now_host_address);
   if (presumably_valid_host_mac_address) {
     log("Presumably valid MAC address loaded.", ESP_LOG_INFO);
+    uint8_t channel = 1;
+    _preferences.espNowGetChannelForHost(&channel);
+    log("loaded channel " + std::to_string(channel), ESP_LOG_INFO);
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
   } else {
     log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
     std::memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
@@ -159,7 +169,18 @@ bool EspNowNode::setup() {
     request.discovery_challenge = esp_random();
 
     int8_t retries = NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST;
+
+    uint8_t channels[] = WIFI_SCAN_CHANNELS;
+    uint8_t channelCount = sizeof(channels);
+    uint8_t channelIdx = 0;
+
     while (retries-- > 0) {
+      uint8_t channel = channels[channelIdx++ % channelCount];
+      log("setting discovery channel " + std::to_string(channel), ESP_LOG_INFO);
+      ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+      ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+      ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+
       // Send discovery request
       bool confirmed = false;
       log("Sending broadcast discovery request (" +
@@ -170,11 +191,16 @@ bool EspNowNode::setup() {
         EspNowDiscoveryResponseV1 *response = (EspNowDiscoveryResponseV1 *)decrypted_data.get();
         confirmed = response->id == MESSAGE_ID_DISCOVERY_RESPONSE_V1 &&
                     response->discovery_challenge == request.discovery_challenge;
+        if (confirmed) {
+          channel = response->channel;
+          log("received channel " + std::to_string(channel) + " from discovery response", ESP_LOG_INFO);
+        }
       }
 
       if (confirmed) {
         log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
         _preferences.espNowSetMacForHost(mac_addr);
+        _preferences.espNowSetChannelForHost(channel);        
         _preferences.commit();
         if (_on_status) {
           _on_status(Status::HOST_DISCOVERY_SUCCESSFUL);
@@ -282,7 +308,7 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
       _on_status(Status::INVALID_HOST);
     }
     esp_restart();
-    return false; // Unreachable, but just in case.§
+    return false; // Unreachable, but just in case.
   }
 
   uint32_t size = sizeof(EspNowMessageHeaderV1) + message_size;
