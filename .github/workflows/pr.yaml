@@ -1,0 +1,9 @@
+name: PR verification
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  build_espidf_examples_for_verification:
+    uses: ./.github/workflows/espidf.yaml
+  build_platformio_examples_for_verification:
+    uses: ./.github/workflows/platformio.yaml
