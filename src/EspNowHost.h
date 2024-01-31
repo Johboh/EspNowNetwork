@@ -32,6 +32,7 @@ public:
     // useful to identify nodes with poor connection.
     uint8_t retries = 0;
     uint64_t mac_address; // MAC address of the sender node as an uint64_t
+    int rssi;
   };
 
   /**
@@ -112,6 +113,8 @@ private:
   static void esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len);
 #endif
 
+  static void esp_wifi_promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type);
+
   static void newMessageTask(void *pvParameters);
   static void messageDeliveredTask(void *pvParameters);
 
@@ -126,6 +129,7 @@ private:
   void log(const std::string message, const esp_log_level_t log_level);
   void log(const std::string message, const esp_err_t esp_err);
 
+  int getRssi(const uint8_t *mac_addr);
   std::string toHex(uint64_t i);
 
 private:

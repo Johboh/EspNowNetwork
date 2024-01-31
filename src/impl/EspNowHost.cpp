@@ -1,5 +1,4 @@
 #include <EspNowHost.h>
-
 #include "esp-now-structs.h"
 #include <cstring>
 #include <esp_random.h>
@@ -7,10 +6,16 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <sstream>
+#include <RingBuf.h>
 
 // Bits used for send ACKs to notify the _send_result_event_group Even Group.
 #define SEND_SUCCESS_BIT 0x01
 #define SEND_FAIL_BIT 0x02
+
+#define WIFI_PKT_VSC_CATCODE 127
+#define WIFI_PKT_VSC_ELEMENT 221
+#define WIFI_PKT_ESPNOW_TYPE 4
+#define ESPRESSIF_MAC_PREFIX {0x18, 0xFE, 0x34} // 0x18FE34 is the first 3 bytes of Espressif MAC addresses
 
 struct Element {
   size_t data_len = 0;
@@ -20,6 +25,92 @@ struct Element {
 
 static QueueHandle_t _receive_queue = xQueueCreate(10, sizeof(Element));
 static EventGroupHandle_t _send_result_event_group = xEventGroupCreate();
+
+typedef struct {
+  uint8_t mac[6];
+} __attribute__((packed)) MacAddr;
+
+// ESPNow Frame Format
+// https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html
+typedef struct {
+  int16_t fctl;
+  int16_t duration;
+  MacAddr da;
+  MacAddr sa;
+  MacAddr bssid;
+  int16_t seqctl;
+  uint8_t catcode;
+  uint8_t orgid[3];
+  uint8_t random[4];
+  unsigned char payload[];
+} __attribute__((packed)) WifiMgmtHdr;
+
+// vendor specific content section
+typedef struct {
+  uint8_t elId;
+  uint8_t len;
+  uint8_t orgid[3];
+  uint8_t type;
+  uint8_t ver;
+  unsigned char body[];
+} __attribute__((packed)) EspNowVsc;
+
+const wifi_promiscuous_filter_t filt={
+    .filter_mask=WIFI_PROMIS_FILTER_MASK_MGMT
+};
+
+typedef struct {
+  uint8_t mac[6];
+  int rssi;
+} __attribute__((packed)) MacToRssi;
+
+// a queue to hold recent mac_addr/rssi records
+// a workaround until this feature request is implemented: https://github.com/espressif/arduino-esp32/issues/7992
+RingBuf<MacToRssi, 16> macBuffer;
+
+void EspNowHost::esp_wifi_promiscuous_rx_cb(void* buf, wifi_promiscuous_pkt_type_t type) {
+  wifi_promiscuous_pkt_t* pkt = (wifi_promiscuous_pkt_t*)buf;
+  wifi_pkt_rx_ctrl_t ctrl = (wifi_pkt_rx_ctrl_t)pkt->rx_ctrl;
+  int len = pkt->rx_ctrl.sig_len;
+  WifiMgmtHdr *wh = (WifiMgmtHdr*)pkt->payload;
+  len -= sizeof(WifiMgmtHdr);
+  if (len < 0){
+    return;
+  }
+
+  // check that the packet is ESP-NOW
+  uint8_t espressifId[] = ESPRESSIF_MAC_PREFIX;
+  if (wh->catcode != WIFI_PKT_VSC_CATCODE || 
+      memcmp(wh->orgid, espressifId, sizeof(espressifId)) != 0) {
+    return;
+  }
+
+  EspNowVsc *vsc = (EspNowVsc*)wh->payload;
+  if (vsc->elId != WIFI_PKT_VSC_ELEMENT || 
+      vsc->type != WIFI_PKT_ESPNOW_TYPE || 
+      memcmp(vsc->orgid, espressifId, sizeof(espressifId)) != 0) {
+    return;
+  }
+
+  MacToRssi macToRssi;
+  macToRssi.rssi = ctrl.rssi;
+  std::memcpy(macToRssi.mac, wh->sa.mac, sizeof(macToRssi.mac));
+
+  macBuffer.pushOverwrite(macToRssi);
+  //ESP_LOGI("foo", "promisc mac=" MACSTR " catcode=%d rssi=%d", MAC2STR(wh->sa.mac), wh->catcode, ctrl.rssi);
+}
+
+int EspNowHost::getRssi(const uint8_t *mac_addr) {
+  MacToRssi macToRssi;
+  uint16_t idx = macBuffer.size();
+  while (--idx > 0) {
+    macToRssi = macBuffer[idx];
+    if (memcmp(macToRssi.mac, mac_addr, sizeof(macToRssi.mac)) == 0) {
+      return macToRssi.rssi;
+    }
+  }
+  return 0;
+}
 
 void EspNowHost::esp_now_on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   // Set event bits based on result.
@@ -126,6 +217,14 @@ bool EspNowHost::start() {
   r = esp_now_register_send_cb(esp_now_on_data_sent);
   log("Registering send callback for esp now failed:", r);
 
+  r = esp_wifi_set_promiscuous_filter(&filt);
+  log("Registering promisc filter failed:", r);
+
+  r = esp_wifi_set_promiscuous_rx_cb(&esp_wifi_promiscuous_rx_cb);
+  log("Registering callback for promisc failed:", r);
+
+  esp_wifi_set_promiscuous(true);
+
   auto ok = r == ESP_OK;
 
   if (ok) {
@@ -156,6 +255,7 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
       auto expected_challenge = challenge->second;
       if (expected_challenge == message->header_challenge) {
         metadata.retries = message->retries;
+        metadata.rssi = getRssi(mac_addr);
         auto outer_message_size = sizeof(Message);
         const uint8_t *inner_message = data + outer_message_size;
         if (_on_application_message) {
