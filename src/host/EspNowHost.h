@@ -9,6 +9,8 @@
 #include <map>
 #include <optional>
 #include <string>
+#include "impl/esp-now-structs.h"
+
 
 /**
  * @brief ESP Now Network: Host
@@ -73,6 +75,9 @@ public:
   typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address, uint32_t firmware_version)>
       FirmwareUpdateAvailable;
 
+  typedef std::function<std::optional<ConfigEnvelope>(uint64_t mac_address, uint32_t config_version)>
+      ConfigUpdateAvailable;
+
   enum class WiFiInterface {
     AP,  // Use the Access Point interface for ESP-NOW.
     STA, // Use the Station/Client interface for ESP-NOW.
@@ -94,8 +99,12 @@ public:
    * and its firmware version have new firmware.
    * @param on_log callback when the host want to log something.
    */
-  EspNowHost(EspNowCrypt &crypt, WiFiInterface wifi_interface, OnNewMessage on_new_message,
-             OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update = {},
+  EspNowHost(EspNowCrypt &crypt, 
+             WiFiInterface wifi_interface, 
+             OnNewMessage on_new_message,
+             OnApplicationMessage on_application_message, 
+             FirmwareUpdateAvailable firwmare_update = {},
+             ConfigUpdateAvailable config_update = {},
              OnLog on_log = {});
 
 public:
@@ -137,6 +146,7 @@ private:
   OnLog _on_log;
   OnNewMessage _on_new_message;
   FirmwareUpdateAvailable _firwmare_update;
+  ConfigUpdateAvailable _config_update;
   OnApplicationMessage _on_application_message;
 };
 

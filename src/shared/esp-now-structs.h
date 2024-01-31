@@ -11,6 +11,7 @@
 #define MESSAGE_ID_CHALLENGE_REQUEST_V1 0xDA
 #define MESSAGE_ID_CHALLENGE_RESPONSE_V1 0xDB
 #define MESSAGE_ID_CHALLENGE_FIRMWARE_RESPONSE_V1 0xDC
+#define MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1 0xDD
 
 #pragma pack(1)
 
@@ -73,6 +74,20 @@ struct EspNowChallengeFirmwareResponseV1 {
   char url[96];                 // url where to find firmware binary. Note the max file path.
   char md5[32];                 // MD5 hash of firmware. Does not include trailing \0
 };
+
+struct ConfigEnvelope {
+  uint16_t version;
+  uint8_t schema;
+  uint8_t length;
+  uint8_t *payload;
+};
+
+struct EspNowChallengeConfigResponseV1 {
+  uint8_t id = MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1;
+  uint32_t challenge_challenge; // Challenge from [EspNowChallengeRequestV1].
+  ConfigEnvelope envelope;
+};
+
 
 #pragma pack(0)
 
