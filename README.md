@@ -23,11 +23,27 @@ Add the following to `libs_deps`:
    Johboh/EspNowNetwork
 ```
 #### Espressif IoT Development Framework:
+You have three options here. You can either use the full library with both the host and the node code, or only the host or the node variant. Suggestion is to only use the host library on the host, and only the node for the node.
+
 In your existing `idf_component.yml` or in a new `idf_component.yml` next to your main component:
+
+*Host only*
+```
+dependencies:
+  johboh/EspNowNetworkHost:
+    version: ">=0.5.2"
+```
+*Node only*
+```
+dependencies:
+  johboh/EspNowNetworkNode:
+    version: ">=0.5.2"
+```
+*Full*
 ```
 dependencies:
   johboh/EspNowNetwork:
-    version: ">=0.5.1"
+    version: ">=0.5.2"
 ```
 
 ### Examples

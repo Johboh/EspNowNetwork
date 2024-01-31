@@ -9,10 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build_examples_for_verification]
     steps:
+      - name: Upload EspNowNetwork to component registry
       - uses: actions/checkout@master
-      - name: Upload component to component registry
         uses: espressif/github-actions/upload_components@master
         with:
           name: "EspNowNetwork"
+          namespace: "johboh"
+          api_token: ${{ secrets.ESP_IDF_COMPONENT_API_TOKEN }}
+
+      - name: Upload EspNowNetworkHost to component registry
+      - uses: actions/checkout@master
+        uses: espressif/github-actions/upload_components@master
+        with:
+          directories: espidf-host-only
+          name: "EspNowNetworkHost"
+          namespace: "johboh"
+          api_token: ${{ secrets.ESP_IDF_COMPONENT_API_TOKEN }}
+
+      - name: Upload EspNowNetworkNode to component registry
+      - uses: actions/checkout@master
+        uses: espressif/github-actions/upload_components@master
+        with:
+          directories: espidf-node-only
+          name: "EspNowNetworkNode"
           namespace: "johboh"
           api_token: ${{ secrets.ESP_IDF_COMPONENT_API_TOKEN }}
