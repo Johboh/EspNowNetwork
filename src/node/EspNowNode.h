@@ -1,8 +1,8 @@
 #ifndef __ESP_NOW_NODE_H__
 #define __ESP_NOW_NODE_H__
 
+#include "EspNowOta.h"
 #include "Preferences.h"
-#include "impl/EspNowOta.h"
 #include <EspNowCrypt.h>
 #include <esp_idf_version.h>
 #include <esp_log.h>

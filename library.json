@@ -15,7 +15,12 @@
     "url": "https://github.com/Johboh/EspNowNetwork.git"
   },
   "build": {
-      "libLDFMode": "deep"
+      "libLDFMode": "deep",
+      "flags": [
+        "-I src/shared",
+        "-I src/host",
+        "-I src/node"
+      ]
   },
   "frameworks": ["espidf", "arduino"],
   "platforms": ["espressif32"],

@@ -1,3 +1,5 @@
+FILE(GLOB_RECURSE node_sources "../src/node/impl/*.*")
+FILE(GLOB_RECURSE shared_sources "../src/shared/impl/*.*")
 
 if(IDF_VERSION_MAJOR GREATER_EQUAL 5)
 set(required_components mbedtls esp_wifi esp_http_client esp_partition esp-tls nvs_flash bootloader_support app_update)
@@ -6,18 +8,8 @@ set(required_components mbedtls esp_wifi esp_http_client esp-tls nvs_flash bootl
 endif()
 
 idf_component_register(COMPONENT_NAME "esp_now_network_node"
-                        SRCS "../src/impl/EspNowCrypt.cpp"
-                             "../src/impl/EspNowMD5Builder.cpp"
-                             "../src/impl/EspNowNode.cpp"
-                             "../src/impl/EspNowOta.cpp"
-                             "../src/impl/EspNowPreferences.cpp"
-                        INCLUDE_DIRS "../src/impl/esp-now-structs.h"
-                                     "../src/impl/EspNowMD5Builder.h"
-                                     "../src/impl/EspNowOta.h"
-                                     "../src/EspNowCrypt.h"
-                                     "../src/EspNowNode.h"
-                                     "../src/EspNowPreferences.h"
-                                     "../src/Preferences.h"
+                        SRCS ${node_sources} ${shared_sources}
+                        INCLUDE_DIRS "../src/shared/" "../src/node/"
                         REQUIRES ${required_components})
 
 
