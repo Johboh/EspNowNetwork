@@ -42,7 +42,7 @@ EspNowHost::OnApplicationMessage _on_application_message = [](EspNowHost::Messag
                                                               const uint8_t *message) {
   // Callback for new application messages.
   auto id = message[0];
-  Serial.println("Got message from 0x" + String(metadata.mac_address) + " with ID " + id);
+  Serial.println("Got message from 0x" + String(metadata.mac_address) + " with ID " + id + " rssi=" + String(metadata.rssi));
   switch (id) {
   case 0x01: {
     MyApplicationMessage *msg = (MyApplicationMessage *)message;
