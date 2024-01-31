@@ -33,7 +33,7 @@ void EspNowPreferences::initalizeNVS() {
 
 bool EspNowPreferences::espNowSetChannelForHost(uint8_t channel) {
   auto key = NVS_STORAGE_KEY_HOST_CHAN;
-  esp_err_t err = nvs_set_u8(_nvs_handle, key, &channel, 1);
+  esp_err_t err = nvs_set_u8(_nvs_handle, key, channel);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to set blob to NVS with key %s (%s)", key, esp_err_to_name(err));
   }
@@ -43,7 +43,7 @@ bool EspNowPreferences::espNowSetChannelForHost(uint8_t channel) {
 bool EspNowPreferences::espNowGetChannelForHost(uint8_t *channel) {
   auto key = NVS_STORAGE_KEY_HOST_CHAN;
 
-  err = nvs_get_u8(_nvs_handle, key, &channel);
+  esp_err_t err = nvs_get_u8(_nvs_handle, key, channel);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to get u8 from NVS with key %s (%s)", key, esp_err_to_name(err));
     return false;
