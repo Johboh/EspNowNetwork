@@ -1,4 +1,4 @@
-FILE(GLOB_RECURSE host_sources "../src/node/impl/*.*")
+FILE(GLOB_RECURSE host_sources "../src/host/impl/*.*")
 FILE(GLOB_RECURSE shared_sources "../src/shared/impl/*.*")
 
 set(required_components esp_wifi mbedtls)
