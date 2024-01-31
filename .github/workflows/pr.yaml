@@ -7,3 +7,8 @@ jobs:
     uses: ./.github/workflows/espidf.yaml
   build_platformio_examples_for_verification:
     uses: ./.github/workflows/platformio.yaml
+  clang-format_check:
+    uses: jidicula/clang-format-action@v4.11.0
+    with:
+      clang-format-version: '13'
+      check-path: 'src'
