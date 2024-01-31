@@ -9,7 +9,7 @@
 #define NVS_STORAGE "storage"
 // Max key length: 15 chars
 #define NVS_STORAGE_KEY_HOST_MAC "host_mac"
-#define NVS_STORAGE_KEY_HOST_CHAN "host_chan"
+#define NVS_STORAGE_KEY_HOST_CHAN "host_channel"
 
 EspNowPreferences::EspNowPreferences() {}
 
@@ -33,35 +33,19 @@ void EspNowPreferences::initalizeNVS() {
 
 bool EspNowPreferences::espNowSetChannelForHost(uint8_t channel) {
   auto key = NVS_STORAGE_KEY_HOST_CHAN;
-  esp_err_t err = nvs_set_blob(_nvs_handle, key, &channel, 1);
+  esp_err_t err = nvs_set_u8(_nvs_handle, key, &channel, 1);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to set blob to NVS with key %s (%s)", key, esp_err_to_name(err));
   }
   return err == ESP_OK;
 }
 
-bool EspNowPreferences::espNowGetChannelForHost(uint8_t *buffer) {
+bool EspNowPreferences::espNowGetChannelForHost(uint8_t *channel) {
   auto key = NVS_STORAGE_KEY_HOST_CHAN;
-  if (buffer == nullptr) {
-    ESP_LOGE(TAG, "channel buffer is null");
-    return false;
-  }
 
-  size_t required_size;
-  esp_err_t err = nvs_get_blob(_nvs_handle, key, NULL, &required_size);
+  err = nvs_get_u8(_nvs_handle, key, &channel);
   if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to get required size for blob from NVS with key %s (%s)", key, esp_err_to_name(err));
-    return false;
-  }
-  if (required_size != 1) {
-    ESP_LOGE(TAG, "Length of buffer stored in memory is not channel size of %d, was %d",
-             1, required_size);
-    return false;
-  }
-
-  err = nvs_get_blob(_nvs_handle, key, buffer, &required_size);
-  if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to get blob from NVS with key %s (%s)", key, esp_err_to_name(err));
+    ESP_LOGE(TAG, "Failed to get u8 from NVS with key %s (%s)", key, esp_err_to_name(err));
     return false;
   }
   return true;

@@ -32,12 +32,12 @@ public:
   virtual bool espNowSetChannelForHost(uint8_t channel) = 0;
   
   /**
-   * @brief Return the WiFi channel stored, or std::nullopt if no channel stored.
+   * @brief Get the WiFi channel stored.  Returns false if no channel stored.
    * @param buffer buffer to store channel
    *
    * @param return true if channel was read successfully.
    */
-  virtual bool espNowGetChannelForHost(uint8_t *buffer) = 0;
+  virtual bool espNowGetChannelForHost(uint8_t *channel) = 0;
 
   /**
    * @brief Commit any changes written.

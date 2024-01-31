@@ -1,11 +1,12 @@
-#include <EspNowNode.h>
 #include "EspNowOta.h"
 #include "esp-now-structs.h"
+#include <EspNowNode.h>
 #include <cstring>
 #include <esp_random.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
+
 
 // Bits used for send ACKs to notify the _send_result_event_group Even Group.
 #define SEND_SUCCESS_BIT 0x01
@@ -23,7 +24,8 @@
 #define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 50
 
 // wifi channels that will be tried during discovery
-#define WIFI_SCAN_CHANNELS {1,2,3,4,5,6,7,8,9,10,11,12,13,14}
+#define WIFI_SCAN_CHANNELS                                                                                             \
+  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 }
 
 struct Element {
   size_t data_len = 0;
@@ -87,9 +89,8 @@ bool EspNowNode::setup() {
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-  ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
   ESP_ERROR_CHECK(esp_wifi_start());
-  
+
   // TODO(johboh): this might unset WIFI6 for ESP32-C6, but getting current protocols and appending WIFI_PROTOCOL_LR and
   // then setting them again, fails with bad argument. Presumably a bug in esp_wifi_set_protocol not supporting
   // WIFI_PROTOCOL_11AX?
@@ -138,9 +139,7 @@ bool EspNowNode::setup() {
     uint8_t channel = 1;
     _preferences.espNowGetChannelForHost(&channel);
     log("loaded channel " + std::to_string(channel), ESP_LOG_INFO);
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-    ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+    setWiFiChannel(channel);
   } else {
     log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
     std::memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
@@ -177,9 +176,7 @@ bool EspNowNode::setup() {
     while (retries-- > 0) {
       uint8_t channel = channels[channelIdx++ % channelCount];
       log("setting discovery channel " + std::to_string(channel), ESP_LOG_INFO);
-      ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-      ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
-      ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+      setWiFiChannel(channel);
 
       // Send discovery request
       bool confirmed = false;
@@ -200,7 +197,7 @@ bool EspNowNode::setup() {
       if (confirmed) {
         log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
         _preferences.espNowSetMacForHost(mac_addr);
-        _preferences.espNowSetChannelForHost(channel);        
+        _preferences.espNowSetChannelForHost(channel);
         _preferences.commit();
         if (_on_status) {
           _on_status(Status::HOST_DISCOVERY_SUCCESSFUL);
@@ -447,4 +444,10 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   }
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   esp_restart();
+}
+
+void EspNowNode::setWiFiChannel(uint8_t channel) {
+  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+  ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
 }
