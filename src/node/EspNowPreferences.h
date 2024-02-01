@@ -27,7 +27,7 @@ public:
   bool espNowSetMacForHost(uint8_t mac[6]) override;
 
   /**
-   * @brief Return the MAC address stored, or std::nullopt if no mac stored.
+   * @brief Get the WiFi channel stored. Returns false if no channel stored.
    * @param buffer buffer to store MAC, must be of size 6 or larger.
    *
    * @param return true if MAC was read successfully.
