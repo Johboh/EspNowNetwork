@@ -7,7 +7,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 
-
 // Bits used for send ACKs to notify the _send_result_event_group Even Group.
 #define SEND_SUCCESS_BIT 0x01
 #define SEND_FAIL_BIT 0x02
@@ -139,7 +138,7 @@ bool EspNowNode::setup() {
     uint8_t channel = 1;
     _preferences.espNowGetChannelForHost(&channel);
     log("loaded channel " + std::to_string(channel), ESP_LOG_INFO);
-    setWiFiChannel(channel);
+    ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
   } else {
     log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
     std::memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
@@ -176,7 +175,7 @@ bool EspNowNode::setup() {
     while (retries-- > 0) {
       uint8_t channel = channels[channelIdx++ % channelCount];
       log("setting discovery channel " + std::to_string(channel), ESP_LOG_INFO);
-      setWiFiChannel(channel);
+      ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
 
       // Send discovery request
       bool confirmed = false;
@@ -444,10 +443,4 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   }
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   esp_restart();
-}
-
-void EspNowNode::setWiFiChannel(uint8_t channel) {
-  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-  ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
-  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
 }

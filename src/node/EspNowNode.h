@@ -206,11 +206,6 @@ private:
    */
   void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, char *md5);
 
-  /**
-   * @brief Sets the WiFi channel that ESP-NOW uses. 
-   */
-  void setWiFiChannel(uint8_t channel);
-
 private:
   OnLog _on_log;
   OnStatus _on_status;
