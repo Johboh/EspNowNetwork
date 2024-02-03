@@ -189,10 +189,12 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
   case MESSAGE_ID_CHALLENGE_REQUEST_V1: {
     EspNowChallengeRequestV1 *message = (EspNowChallengeRequestV1 *)data;
     auto firmware_version = message->firmware_version;
+    auto config_version = message->config_version;
     log("Got challenge request from 0x" + toHex(mac_address) +
-            ", firmware version: " + std::to_string(firmware_version),
+            ", firmware version: " + std::to_string(firmware_version) +
+            ", config version: " + std::to_string(config_version),
         ESP_LOG_INFO);
-    handleChallengeRequest(mac_addr, message->challenge_challenge, firmware_version);
+    handleChallengeRequest(mac_addr, message->challenge_challenge, firmware_version, config_version);
     break;
   }
 
@@ -210,7 +212,7 @@ void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_ch
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowDiscoveryResponseV1));
 }
 
-void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version) {
+void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version, uint16_t config_version) {
   uint64_t mac_address = macToMac(mac_addr);
 
   // Any firmware to update?
@@ -230,14 +232,14 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
   }
 
   if (_config_update) {
-    auto metadata = _config_update(mac_address, 1);
+    log("checking for config_update", ESP_LOG_INFO);
+    auto metadata = _config_update(mac_address, config_version);
     if (metadata) {
-      log("config update: version=" + std::to_string(metadata->version), ESP_LOG_INFO);
+      log("config update: version=" + std::to_string(metadata->version) + " len=" + std::to_string(metadata->length), ESP_LOG_INFO);
       EspNowChallengeConfigResponseV1 message;
       message.challenge_challenge = challenge_challenge;
-      uint16_t size = sizeof(EspNowChallengeConfigResponseV1);
-      size += metadata->length;
-      sendMessageToTemporaryPeer(mac_addr, &message, size);
+      std:memcpy(&message.envelope, &metadata, sizeof(EspNowConfigEnvelope));
+      sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeConfigResponseV1));
       return;
     }
   }

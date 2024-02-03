@@ -9,8 +9,8 @@
 #include <map>
 #include <optional>
 #include <string>
-#include "impl/esp-now-structs.h"
 
+struct EspNowConfigEnvelope;
 
 /**
  * @brief ESP Now Network: Host
@@ -74,8 +74,8 @@ public:
    */
   typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address, uint32_t firmware_version)>
       FirmwareUpdateAvailable;
-
-  typedef std::function<std::optional<ConfigEnvelope>(uint64_t mac_address, uint32_t config_version)>
+  
+  typedef std::function<std::optional<EspNowConfigEnvelope>(uint64_t mac_address, uint8_t config_version)>
       ConfigUpdateAvailable;
 
   enum class WiFiInterface {
@@ -126,7 +126,7 @@ private:
 
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
   void handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge);
-  void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version);
+  void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version, uint16_t config_version);
 
   void sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length);
 
