@@ -1,5 +1,5 @@
 FILE(GLOB_RECURSE host_sources "./src/host/impl/*.*")
-FILE(GLOB_RECURSE node_sources "../src/node/impl/*.*")
+FILE(GLOB_RECURSE node_sources "./src/node/impl/*.*")
 FILE(GLOB_RECURSE shared_sources "./src/shared/impl/*.*")
 
 if(IDF_VERSION_MAJOR GREATER_EQUAL 5)
