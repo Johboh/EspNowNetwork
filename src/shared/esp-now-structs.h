@@ -2,6 +2,7 @@
 #define __ESP_NOW_STRUCTURE_H__
 
 #include <cstdint>
+#include "esp-now-config.h"
 
 #define MESSAGE_ID_HEADER 0x03
 
@@ -48,6 +49,7 @@ struct EspNowDiscoveryResponseV1 {
 struct EspNowChallengeRequestV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_REQUEST_V1;
   uint32_t firmware_version;
+  uint16_t config_version;
   // The challenge that the host should send back/set in [EspNowChallengeResponseV1] or
   // [EspNowChallengeFirmwareResponseV1] reply.
   uint32_t challenge_challenge;
@@ -75,17 +77,10 @@ struct EspNowChallengeFirmwareResponseV1 {
   char md5[32];                 // MD5 hash of firmware. Does not include trailing \0
 };
 
-struct ConfigEnvelope {
-  uint16_t version;
-  uint8_t schema;
-  uint8_t length;
-  uint8_t *payload;
-};
-
 struct EspNowChallengeConfigResponseV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1;
   uint32_t challenge_challenge; // Challenge from [EspNowChallengeRequestV1].
-  ConfigEnvelope envelope;
+  EspNowConfigEnvelope envelope;
 };
 
 

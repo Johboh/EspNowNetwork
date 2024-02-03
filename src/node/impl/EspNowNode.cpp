@@ -85,7 +85,6 @@ bool EspNowNode::setup() {
   ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_start());
-
   // TODO(johboh): this might unset WIFI6 for ESP32-C6, but getting current protocols and appending WIFI_PROTOCOL_LR and
   // then setting them again, fails with bad argument. Presumably a bug in esp_wifi_set_protocol not supporting
   // WIFI_PROTOCOL_11AX?
@@ -150,6 +149,7 @@ bool EspNowNode::setup() {
     if (_on_status) {
       _on_status(Status::HOST_DISCOVERY_STARTED);
     }
+
     // Ok so we have no valid host MAC address.
     // Announce our precence until we get a reply.
 
@@ -194,6 +194,13 @@ bool EspNowNode::setup() {
     return false;
   }
 
+  EspNowConfigEnvelope config_envelope;
+  if (_preferences.getConfig(&config_envelope)) {
+    _config_version = config_envelope.version;
+  } else {
+    _config_version = 0;
+  }
+
   _setup_successful = success;
   return success;
 }
@@ -224,6 +231,8 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
   // The challenge we expect to get back in the challenge/firmware response.
   request.challenge_challenge = esp_random();
   request.firmware_version = _firmware_version;
+  request.config_version = _config_version;
+  log("challenge firmare version=" + std::to_string(_firmware_version) + " config version=" + std::to_string(_config_version), ESP_LOG_DEBUG);
 
   // First, we must request the challenge to use.
   bool got_challange = false;
@@ -267,6 +276,25 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
         }
         break;
       }
+      case MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1: {
+        log("Got challenge update config response.", ESP_LOG_INFO);
+        EspNowChallengeConfigResponseV1 *response = (EspNowChallengeConfigResponseV1 *)decrypted_data.get();
+        // Validate the challenge for the challenge request/response pair
+        if (response->challenge_challenge == request.challenge_challenge) {
+          EspNowConfigEnvelope config_envelope;
+          std::memcpy(&config_envelope, &response->envelope, sizeof(EspNowConfigEnvelope));
+          _preferences.setConfig(&config_envelope);
+          _preferences.commit();  
+          log("Saved config (version=" + std::to_string(config_envelope.version) + " ). Restarting.", ESP_LOG_INFO);
+          esp_restart();
+        } else {
+          log("Challenge mismatch for challenge request/ config response (expected: " +
+                  std::to_string(request.challenge_challenge) +
+                  ", got: " + std::to_string(response->challenge_challenge) + ")",
+              ESP_LOG_WARN);
+        }
+        break;
+      }      
       }
     }
   }

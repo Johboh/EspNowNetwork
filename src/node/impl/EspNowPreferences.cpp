@@ -9,6 +9,7 @@
 #define NVS_STORAGE "storage"
 // Max key length: 15 chars
 #define NVS_STORAGE_KEY_HOST_MAC "host_mac"
+#define NVS_STORAGE_KEY_CONFIG "config";
 
 EspNowPreferences::EspNowPreferences() {}
 
@@ -65,6 +66,43 @@ bool EspNowPreferences::espNowGetMacForHost(uint8_t *buffer) {
   }
   return true;
 }
+
+bool EspNowPreferences::setConfig(EspNowConfigEnvelope *config_envelope) {
+  auto key = NVS_STORAGE_KEY_CONFIG;
+  esp_err_t err = nvs_set_blob(_nvs_handle, key, config_envelope, sizeof(EspNowConfigEnvelope));
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to set blob to NVS with key %s (%s)", key, esp_err_to_name(err));
+  }
+  return err == ESP_OK;
+}
+
+bool EspNowPreferences::getConfig(EspNowConfigEnvelope *config_envelope) {
+  auto key = NVS_STORAGE_KEY_CONFIG;
+  if (config_envelope == nullptr) {
+    ESP_LOGE(TAG, "config envelope is null");
+    return false;
+  }
+
+  size_t required_size;
+  esp_err_t err = nvs_get_blob(_nvs_handle, key, NULL, &required_size);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to get required size for blob from NVS with key %s (%s)", key, esp_err_to_name(err));
+    return false;
+  }
+  if (required_size != sizeof(EspNowConfigEnvelope)) {
+    ESP_LOGE(TAG, "Length of buffer stored in memory is not config envelope size (%d), was %d",
+             sizeof(EspNowConfigEnvelope), required_size);
+    return false;
+  }
+
+  err = nvs_get_blob(_nvs_handle, key, config_envelope, &required_size);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to get blob from NVS with key %s (%s)", key, esp_err_to_name(err));
+    return false;
+  }
+  return true;
+}
+
 
 bool EspNowPreferences::commit() {
   esp_err_t err = nvs_commit(_nvs_handle);
