@@ -1,4 +1,4 @@
-name: ESP-IDF CI
+name: Clang Format CI
 on: [workflow_call, push]
 jobs:
   formatting-check:
