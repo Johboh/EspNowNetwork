@@ -12,9 +12,10 @@ jobs:
           - name: v5_build
             version_number: v5.1.2
             target: esp32c6
-        example:
-          - name: host
-          - name: node
+        path:
+          - name: examples/espidf/host
+          - name: examples/espidf/node
+          - name: integration
 
     steps:
       - name: Checkout repo
@@ -27,4 +28,4 @@ jobs:
         with:
           esp_idf_version: ${{ matrix.version.version_number }}
           target: ${{ matrix.version.target }}
-          path: examples/espidf/${{ matrix.example.name }}
+          path: ${{ matrix.path.name }}
