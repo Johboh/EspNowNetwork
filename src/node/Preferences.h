@@ -1,8 +1,8 @@
 #ifndef __ESP_NOW_I_PREFERENCES_H__
 #define __ESP_NOW_I_PREFERENCES_H__
 
-#include <cstdint>
 #include "esp-now-config.h"
+#include <cstdint>
 
 namespace EspNowNetwork {
 
