@@ -31,19 +31,19 @@ In your existing `idf_component.yml` or in a new `idf_component.yml` next to you
 ```
 dependencies:
   johboh/EspNowNetworkHost:
-    version: ">=0.5.6"
+    version: ">=0.5.11"
 ```
 *Node only*
 ```
 dependencies:
   johboh/EspNowNetworkNode:
-    version: ">=0.5.6"
+    version: ">=0.5.11"
 ```
 *Full*
 ```
 dependencies:
   johboh/EspNowNetwork:
-    version: ">=0.5.6"
+    version: ">=0.5.11"
 ```
 
 ### Examples

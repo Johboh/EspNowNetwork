@@ -1,0 +1,29 @@
+name: Push to Espressif Component Service
+on:
+  release:
+    types: [created]
+jobs:
+  build_examples_for_verification:
+    uses: ./.github/workflows/espidf.yaml
+
+  upload_components:
+    runs-on: ubuntu-latest
+    needs: [build_examples_for_verification]
+    steps:
+      - uses: actions/checkout@v4.1.1
+
+      - name: Remove full
+        run: rm -f CMakeLists.txt idf_component.yml LICENSE
+
+      - name: Move node
+        run: mv EspNowNetworkNode/* ./
+
+      - name: Replace ./.. with ./
+        run: sed -i 's|./../|./|g' CMakeLists.txt
+
+      - name: Upload EspNowNetwork to component registry
+        uses: espressif/upload-components-ci-action/@v1
+        with:
+          name: "EspNowNetworkNode"
+          namespace: "johboh"
+          api_token: ${{ secrets.ESP_IDF_COMPONENT_API_TOKEN }}

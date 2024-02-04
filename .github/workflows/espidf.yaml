@@ -19,9 +19,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
+        uses: actions/checkout@v4.1.1
 
       - name: ESP-IDF Build
         uses: espressif/esp-idf-ci-action@v1
