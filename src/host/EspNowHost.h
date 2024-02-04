@@ -74,7 +74,7 @@ public:
    */
   typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address, uint32_t firmware_version)>
       FirmwareUpdateAvailable;
-  
+
   typedef std::function<std::optional<EspNowConfigEnvelope>(uint64_t mac_address, uint8_t config_version)>
       ConfigUpdateAvailable;
 
@@ -99,13 +99,9 @@ public:
    * and its firmware version have new firmware.
    * @param on_log callback when the host want to log something.
    */
-  EspNowHost(EspNowCrypt &crypt, 
-             WiFiInterface wifi_interface, 
-             OnNewMessage on_new_message,
-             OnApplicationMessage on_application_message, 
-             FirmwareUpdateAvailable firwmare_update = {},
-             ConfigUpdateAvailable config_update = {},
-             OnLog on_log = {});
+  EspNowHost(EspNowCrypt &crypt, WiFiInterface wifi_interface, OnNewMessage on_new_message,
+             OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update = {},
+             ConfigUpdateAvailable config_update = {}, OnLog on_log = {});
 
 public:
   /**
@@ -126,7 +122,8 @@ private:
 
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
   void handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge);
-  void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version, uint16_t config_version);
+  void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version,
+                              uint16_t config_version);
 
   void sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length);
 

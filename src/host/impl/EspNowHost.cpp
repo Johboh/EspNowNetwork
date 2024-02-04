@@ -55,15 +55,12 @@ void EspNowHost::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_inf
 }
 #endif
 
-EspNowHost::EspNowHost(EspNowCrypt &crypt, 
-                       EspNowHost::WiFiInterface wifi_interface, 
-                       OnNewMessage on_new_message,
-                       OnApplicationMessage on_application_message, 
-                       FirmwareUpdateAvailable firwmare_update,
-                       ConfigUpdateAvailable config_update,
-                       OnLog on_log)
+EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::WiFiInterface wifi_interface, OnNewMessage on_new_message,
+                       OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update,
+                       ConfigUpdateAvailable config_update, OnLog on_log)
     : _crypt(crypt), _wifi_interface(wifi_interface), _on_log(on_log), _on_new_message(on_new_message),
-      _firwmare_update(firwmare_update), _config_update(config_update), _on_application_message(on_application_message) {}
+      _firwmare_update(firwmare_update), _config_update(config_update),
+      _on_application_message(on_application_message) {}
 
 void EspNowHost::newMessageTask(void *pvParameters) {
   EspNowHost *_this = (EspNowHost *)pvParameters;
@@ -190,9 +187,8 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
     EspNowChallengeRequestV1 *message = (EspNowChallengeRequestV1 *)data;
     auto firmware_version = message->firmware_version;
     auto config_version = message->config_version;
-    log("Got challenge request from 0x" + toHex(mac_address) +
-            ", firmware version: " + std::to_string(firmware_version) +
-            ", config version: " + std::to_string(config_version),
+    log("Got challenge request from 0x" + toHex(mac_address) + ", firmware version: " +
+            std::to_string(firmware_version) + ", config version: " + std::to_string(config_version),
         ESP_LOG_INFO);
     handleChallengeRequest(mac_addr, message->challenge_challenge, firmware_version, config_version);
     break;
@@ -212,7 +208,8 @@ void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_ch
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowDiscoveryResponseV1));
 }
 
-void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version, uint16_t config_version) {
+void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version,
+                                        uint16_t config_version) {
   uint64_t mac_address = macToMac(mac_addr);
 
   // Any firmware to update?
@@ -235,10 +232,12 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
     log("checking for config_update", ESP_LOG_INFO);
     auto metadata = _config_update(mac_address, config_version);
     if (metadata) {
-      log("config update: version=" + std::to_string(metadata->version) + " len=" + std::to_string(metadata->length), ESP_LOG_INFO);
+      log("config update: version=" + std::to_string(metadata->version) + " len=" + std::to_string(metadata->length),
+          ESP_LOG_INFO);
       EspNowChallengeConfigResponseV1 message;
       message.challenge_challenge = challenge_challenge;
-      std:memcpy(&message.envelope, &metadata, sizeof(EspNowConfigEnvelope));
+    std:
+      memcpy(&message.envelope, &metadata, sizeof(EspNowConfigEnvelope));
       sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeConfigResponseV1));
       return;
     }

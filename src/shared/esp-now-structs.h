@@ -1,8 +1,8 @@
 #ifndef __ESP_NOW_STRUCTURE_H__
 #define __ESP_NOW_STRUCTURE_H__
 
-#include <cstdint>
 #include "esp-now-config.h"
+#include <cstdint>
 
 #define MESSAGE_ID_HEADER 0x03
 
@@ -82,7 +82,6 @@ struct EspNowChallengeConfigResponseV1 {
   uint32_t challenge_challenge; // Challenge from [EspNowChallengeRequestV1].
   EspNowConfigEnvelope envelope;
 };
-
 
 #pragma pack(0)
 
