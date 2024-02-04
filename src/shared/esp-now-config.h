@@ -1,6 +1,8 @@
 #ifndef __ESP_NOW_CONFIG_H__
 #define __ESP_NOW_CONFIG_H__
 
+#include <cstdint>
+
 /**
  * A container for the application-specific config data that is held within the payload.
  * The payload could be anything, like a string, or json, but is probably a struct for efficiency.
