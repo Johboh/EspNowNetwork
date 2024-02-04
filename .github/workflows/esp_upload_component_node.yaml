@@ -1,4 +1,4 @@
-name: Push to Espressif Component Service
+name: Push EspNowNetworkNode to Espressif Component Service
 on:
   release:
     types: [created]
