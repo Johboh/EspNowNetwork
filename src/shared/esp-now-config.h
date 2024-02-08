@@ -10,7 +10,7 @@
 struct EspNowConfigEnvelope {
   uint16_t version; // an ID that should be unique for each unique config/payload
   uint8_t length;   // length of the payload
-  uint8_t payload[150];
+  uint8_t payload[150]; // needs to fit within ESP NOW limit of 250 bytes, minus headers etc
 };
 
 #endif // __ESP_NOW_CONFIG_H__
