@@ -236,7 +236,6 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
           ESP_LOG_INFO);
       EspNowChallengeConfigResponseV1 message;
       message.challenge_challenge = challenge_challenge;
-    std:
       memcpy(&message.envelope, &metadata, sizeof(EspNowConfigEnvelope));
       sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeConfigResponseV1));
       return;
