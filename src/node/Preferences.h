@@ -30,7 +30,7 @@ public:
    * @brief Set the WiFi channel that the host is on
    */
   virtual bool espNowSetChannelForHost(uint8_t channel) = 0;
-  
+
   /**
    * @brief Get the WiFi channel stored.  Returns false if no channel stored.
    * @param buffer buffer to store channel
