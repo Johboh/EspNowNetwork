@@ -26,14 +26,24 @@
   "platforms": ["espressif32"],
   "examples": [
     {
-      "name": "Host",
-      "base": "examples/host",
+      "name": "Arduino Host",
+      "base": "examples/arduino/host",
       "files": ["Host.ino"]
     },
     {
-      "name": "Node",
-      "base": "examples/Node",
+      "name": "Arduino Node",
+      "base": "examples/arduino/node",
       "files": ["Node.ino"]
+    },
+    {
+      "name": "ESP-IDF Host",
+      "base": "examples/espidf/host/main",
+      "files": ["main.cpp"]
+    },
+    {
+      "name": "ESP-IDF Node",
+      "base": "examples/espidf/node/main",
+      "files": ["main.cpp"]
     }
   ],
   "dependencies": []
