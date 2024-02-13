@@ -246,7 +246,7 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
       memcpy(buf + sizeof(EspNowChallengeConfigResponseV1), metadata->payload, metadata->header.length);
 
       sendMessageToTemporaryPeer(mac_addr, &buf, sizeof(buf));
-      delete metadata->payload;
+      delete[](uint8_t *) metadata->payload;
       return;
     }
   }
