@@ -56,10 +56,11 @@ void EspNowHost::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_inf
 #endif
 
 EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::WiFiInterface wifi_interface, OnNewMessage on_new_message,
-                       OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update,
-                       OnLog on_log)
+                       OnApplicationMessage on_application_message, FirmwareUpdateAvailable firmware_update,
+                       ConfigurationUpdateAvailable config_update, OnLog on_log)
     : _crypt(crypt), _wifi_interface(wifi_interface), _on_log(on_log), _on_new_message(on_new_message),
-      _firwmare_update(firwmare_update), _on_application_message(on_application_message) {}
+      _firmware_update(firmware_update), _config_update(config_update),
+      _on_application_message(on_application_message) {}
 
 void EspNowHost::newMessageTask(void *pvParameters) {
   EspNowHost *_this = (EspNowHost *)pvParameters;
@@ -185,10 +186,11 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
   case MESSAGE_ID_CHALLENGE_REQUEST_V1: {
     EspNowChallengeRequestV1 *message = (EspNowChallengeRequestV1 *)data;
     auto firmware_version = message->firmware_version;
-    log("Got challenge request from 0x" + toHex(mac_address) +
-            ", firmware version: " + std::to_string(firmware_version),
+    auto configuration_revision = message->configuration_revision;
+    log("Got challenge request from 0x" + toHex(mac_address) + ", firmware version: " +
+            std::to_string(firmware_version) + ", config version: " + std::to_string(configuration_revision),
         ESP_LOG_INFO);
-    handleChallengeRequest(mac_addr, message->challenge_challenge, firmware_version);
+    handleChallengeRequest(mac_addr, message->challenge_challenge, firmware_version, configuration_revision);
     break;
   }
 
@@ -206,12 +208,13 @@ void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_ch
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowDiscoveryResponseV1));
 }
 
-void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version) {
+void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version,
+                                        uint16_t configuration_revision) {
   uint64_t mac_address = macToMac(mac_addr);
 
   // Any firmware to update?
-  if (_firwmare_update) {
-    auto metadata = _firwmare_update(mac_address, firmware_version);
+  if (_firmware_update) {
+    auto metadata = _firmware_update(mac_address, firmware_version);
     if (metadata) {
       log("Sending firmware update response to 0x" + toHex(mac_address), ESP_LOG_INFO);
       EspNowChallengeFirmwareResponseV1 message;
@@ -221,6 +224,29 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
       strncpy(message.url, metadata->url, sizeof(message.url));
       strncpy(message.md5, metadata->md5, sizeof(message.md5));
       sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowChallengeFirmwareResponseV1));
+      return;
+    }
+  }
+
+  if (_config_update) {
+    log("checking for config_update", ESP_LOG_INFO);
+    auto metadata = _config_update(mac_address, configuration_revision);
+    if (metadata) {
+      log("configuration update: revision=" + std::to_string(metadata->header.revision) +
+              " len=" + std::to_string(metadata->header.length),
+          ESP_LOG_INFO);
+
+      EspNowChallengeConfigurationResponseV1 message;
+      message.challenge_challenge = challenge_challenge;
+      message.revision = metadata->header.revision;
+      message.length = metadata->header.length;
+
+      uint8_t buf[sizeof(EspNowChallengeConfigurationResponseV1) + metadata->header.length];
+      memcpy(buf, &message, sizeof(EspNowChallengeConfigurationResponseV1));
+      memcpy(buf + sizeof(EspNowChallengeConfigurationResponseV1), metadata->payload, metadata->header.length);
+
+      sendMessageToTemporaryPeer(mac_addr, &buf, sizeof(buf));
+      delete[](uint8_t *) metadata->payload;
       return;
     }
   }

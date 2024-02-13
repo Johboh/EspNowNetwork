@@ -35,6 +35,20 @@ public:
   bool espNowGetMacForHost(uint8_t *buffer) override;
 
   /**
+   * @brief Set the config envelope that contains the application-specific config data.
+   */
+  bool setConfigHeader(ConfigurationHeader *configuration_header) override;
+
+  /**
+   * @brief Get the config envelope that contains the application-specific config data.
+   * @param config_envelope the EspNowConfigEnvelope to copy the data into
+   */
+  bool getConfigHeader(ConfigurationHeader *configuration_header) override;
+
+  bool getConfigData(uint8_t *buffer, uint8_t length) override;
+  bool setConfigData(uint8_t *buffer, uint8_t length) override;
+
+  /**
    * @brief After setting variables, call this to commit/save.
    * @return true on success.
    */

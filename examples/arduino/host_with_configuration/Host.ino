@@ -1,3 +1,4 @@
+#include "shared/esp-now-structs.h"
 #include <Arduino.h>
 #include <EspNowCrypt.h>
 #include <EspNowHost.h>
@@ -13,6 +14,10 @@ struct MyApplicationMessage {
 struct MySecondApplicationMessage {
   uint8_t id = 0x02;
   double temperature;
+};
+struct MyConfigMessageV1 {
+  uint32_t sleep_seconds;
+  uint8_t foo;
 };
 #pragma pack(0)
 
@@ -54,12 +59,32 @@ EspNowHost::OnApplicationMessage _on_application_message = [](EspNowHost::Messag
     Serial.println("MyApplicationMessage::temperature: " + String(msg->temperature));
     break;
   }
+  default: {
+    Serial.println("Unknown message id: " + String(id));
+  }
   }
 };
 
 EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac_address, uint32_t firmware_version) {
   // Callback where we can indicate if there is a new firmware available.
   return std::nullopt;
+};
+
+EspNowHost::ConfigurationUpdateAvailable _config_update_available = [](uint64_t mac_address,
+                                                                       uint16_t configuration_revision) {
+  Serial.println(("_config_update_available start ver=" + std::to_string(configuration_revision)).c_str());
+  if (configuration_revision != 1) {
+    EspNowConfigEnvelope env;
+    env.version = 1;
+    MyConfigMessageV1 cfg;
+    cfg.sleep_seconds = 30;
+    cfg.foo = 111;
+    env.length = sizeof(MyConfigMessageV1);
+    memcpy(&env.payload, &cfg, env.length);
+    return (std::optional<EspNowConfigEnvelope>)env;
+  }
+
+  return (std::optional<EspNowConfigEnvelope>)std::nullopt;
 };
 
 EspNowHost::OnLog _on_log = [](const std::string message, const esp_log_level_t log_level) {
@@ -98,7 +123,7 @@ EspNowHost::OnLog _on_log = [](const std::string message, const esp_log_level_t 
 
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
 EspNowHost _esp_now_host(_esp_now_crypt, EspNowHost::WiFiInterface::STA, _on_new_message, _on_application_message,
-                         _firmware_update_available, NULL, _on_log);
+                         _firmware_update_available, _config_update_available, _on_log);
 
 void setup() {
   Serial.begin(115200);
@@ -114,6 +139,8 @@ void setup() {
   Serial.println("have wifi");
   Serial.print("IP number: ");
   Serial.println(WiFi.localIP());
+  Serial.print("Channel: ");
+  Serial.println(WiFi.channel());
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);

@@ -1,6 +1,7 @@
 #ifndef __ESP_NOW_I_PREFERENCES_H__
 #define __ESP_NOW_I_PREFERENCES_H__
 
+#include "esp-now-config.h"
 #include <cstdint>
 
 namespace EspNowNetwork {
@@ -25,6 +26,12 @@ public:
    * @param return true if MAC was read successfully.
    */
   virtual bool espNowGetMacForHost(uint8_t *buffer) = 0;
+
+  virtual bool getConfigHeader(ConfigurationHeader *configuration_header) = 0;
+  virtual bool setConfigHeader(ConfigurationHeader *configuration_header) = 0;
+
+  virtual bool getConfigData(uint8_t *buffer, uint8_t length) = 0;
+  virtual bool setConfigData(uint8_t *buffer, uint8_t length) = 0;
 
   /**
    * @brief Commit any changes written.
