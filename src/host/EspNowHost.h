@@ -1,6 +1,7 @@
 #ifndef __ESP_NOW_HOST_H__
 #define __ESP_NOW_HOST_H__
 
+#include "esp-now-config.h"
 #include <EspNowCrypt.h>
 #include <esp_idf_version.h>
 #include <esp_log.h>
@@ -9,8 +10,6 @@
 #include <map>
 #include <optional>
 #include <string>
-
-struct EspNowConfigEnvelope;
 
 /**
  * @brief ESP Now Network: Host
@@ -65,6 +64,15 @@ public:
   };
 
   /**
+   * @brief A container for the application-specific config data that is held within the payload.
+   * The payload could be anything, like a string, or json, but is probably a struct for efficiency.
+   */
+  struct ConfigurationAvailable {
+    ConfigurationHeader header;
+    const void *payload;
+  };
+
+  /**
    * @brief Callback that if returning a [FirmwareUpdate], will tell host to upgrade its firmware given the metadata in
    * [FirmwareUpdate].
    *
@@ -75,8 +83,15 @@ public:
   typedef std::function<std::optional<FirmwareUpdate>(uint64_t mac_address, uint32_t firmware_version)>
       FirmwareUpdateAvailable;
 
-  typedef std::function<std::optional<EspNowConfigEnvelope>(uint64_t mac_address, uint8_t config_version)>
-      ConfigUpdateAvailable;
+  /**
+   * @brief Callback that if returning a [EspNowConfigEnvelope], that configuration will be sent to the Node.
+   *
+   * @param mac_address the MAC address of the node.
+   * @param configuration_revision configuration version as reported by the node.
+   * return std::nullopt if there is no configuration update available for the given mac_address
+   */
+  typedef std::function<std::optional<ConfigurationAvailable>(uint64_t mac_address, uint64_t configuration_revision)>
+      ConfigurationUpdateAvailable;
 
   enum class WiFiInterface {
     AP,  // Use the Access Point interface for ESP-NOW.
@@ -93,15 +108,18 @@ public:
    * @param on_new_message callback on any new message received, regardless of type, validation, decrypted correctly
    * etc. Intended for turning on led or similar to indicate new package.
    * @param on_application_message callback when there is a verified, decrypted application message received.
-   * @param firwmare_update callback to check if a firmware update is available. Please note that this function will be
+   * @param firmware_update callback to check if a firmware update is available. Please note that this function will be
    * called on every challenge request sent by the node, so this function must return fast and not perform any heavy
    * computation or network. This function should preferably just do a lookup in a lookup table to check if a given node
    * and its firmware version have new firmware.
+   * @param config_update callback to check if a configuration update is available. Please note that this function will
+   * be called on every challenge request sent by the node, just like for firmware_update above, so the same rules
+   * apply regarding this fallback function needing to be light-weight and fast.
    * @param on_log callback when the host want to log something.
    */
   EspNowHost(EspNowCrypt &crypt, WiFiInterface wifi_interface, OnNewMessage on_new_message,
-             OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update = {},
-             ConfigUpdateAvailable config_update = {}, OnLog on_log = {});
+             OnApplicationMessage on_application_message, FirmwareUpdateAvailable firmware_update = {},
+             ConfigurationUpdateAvailable config_update = {}, OnLog on_log = {});
 
 public:
   /**
@@ -123,7 +141,7 @@ private:
   void handleQueuedMessage(uint8_t *mac_addr, uint8_t *data);
   void handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge);
   void handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version,
-                              uint16_t config_version);
+                              uint16_t configuration_revision);
 
   void sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length);
 
@@ -142,8 +160,8 @@ private:
 
   OnLog _on_log;
   OnNewMessage _on_new_message;
-  FirmwareUpdateAvailable _firwmare_update;
-  ConfigUpdateAvailable _config_update;
+  FirmwareUpdateAvailable _firmware_update;
+  ConfigurationUpdateAvailable _config_update;
   OnApplicationMessage _on_application_message;
 };
 

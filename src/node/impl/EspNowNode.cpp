@@ -194,11 +194,11 @@ bool EspNowNode::setup() {
     return false;
   }
 
-  EspNowConfigEnvelope config_envelope;
-  if (_preferences.getConfig(&config_envelope)) {
-    _config_version = config_envelope.version;
+  ConfigurationHeader configuration_header;
+  if (_preferences.getConfigHeader(&configuration_header)) {
+    _configuration_revision = configuration_header.revision;
   } else {
-    _config_version = 0;
+    _configuration_revision = 0;
   }
 
   _setup_successful = success;
@@ -231,8 +231,10 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
   // The challenge we expect to get back in the challenge/firmware response.
   request.challenge_challenge = esp_random();
   request.firmware_version = _firmware_version;
-  request.config_version = _config_version;
-  log("challenge firmare version=" + std::to_string(_firmware_version) + " config version=" + std::to_string(_config_version), ESP_LOG_DEBUG);
+  request.configuration_revision = _configuration_revision;
+  log("challenge firmare version=" + std::to_string(_firmware_version) +
+          " configuration revision=" + std::to_string(_configuration_revision),
+      ESP_LOG_DEBUG);
 
   // First, we must request the challenge to use.
   bool got_challange = false;
@@ -281,11 +283,19 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
         EspNowChallengeConfigResponseV1 *response = (EspNowChallengeConfigResponseV1 *)decrypted_data.get();
         // Validate the challenge for the challenge request/response pair
         if (response->challenge_challenge == request.challenge_challenge) {
-          EspNowConfigEnvelope config_envelope;
-          std::memcpy(&config_envelope, &response->envelope, sizeof(EspNowConfigEnvelope));
-          _preferences.setConfig(&config_envelope);
-          _preferences.commit();  
-          log("Saved config (version=" + std::to_string(config_envelope.version) + " ). Restarting.", ESP_LOG_INFO);
+          ConfigurationHeader configuration_header;
+          configuration_header.revision = response->revision;
+          configuration_header.length = response->length;
+          _preferences.setConfigHeader(&configuration_header);
+
+          uint8_t buf[response->length]; // buffer to hold configuration data
+
+          // configuration data is at the end of the EspNowChallengeConfigResponseV1 message
+          memcpy(buf, decrypted_data.get() + sizeof(EspNowChallengeConfigResponseV1), response->length);
+          _preferences.setConfigData(buf, response->length);
+          _preferences.commit();
+          log("Saved config (version=" + std::to_string(configuration_header.revision) + " ). Restarting.",
+              ESP_LOG_INFO);
           esp_restart();
         } else {
           log("Challenge mismatch for challenge request/ config response (expected: " +
@@ -294,7 +304,7 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
               ESP_LOG_WARN);
         }
         break;
-      }      
+      }
       }
     }
   }

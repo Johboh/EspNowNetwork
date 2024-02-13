@@ -5,12 +5,12 @@
 #include <esp_crt_bundle.h>
 
 #define MICROSECONDS_PER_SECOND 1000000LL
-#define SLEEP_TIME_US (MICROSECONDS_PER_SECOND * 60LL * 1LL) // 1 minute
+#define DEFAULT_SLEEP_TIME_US (MICROSECONDS_PER_SECOND * 60LL) // 60 seconds
 
 #define FIRMWARE_VERSION 90201
 
-
-// These structs are the application messages shared across the host and node device.
+// These structs are the application messages shared across the host and node
+// device.
 #pragma pack(1)
 struct MyApplicationMessage {
   uint8_t id = 0x01;
@@ -21,8 +21,8 @@ struct MySecondApplicationMessage {
   double temperature;
 };
 struct MyConfigMessageV1 {
-  uint32_t sleep_seconds;
-  uint8_t foo;
+  uint32_t sleep_seconds; // how long the node should deep-sleep
+  uint8_t foo;            // some other config value, not used in this example
 };
 #pragma pack(0)
 
@@ -98,24 +98,23 @@ EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION,
 
 void setup() {
   Serial.begin(115200);
-  uint32_t timestamp1 = millis();
 
   _esp_now_preferences.initalizeNVS();
 
-  EspNowConfigEnvelope config_envelope;
-  MyConfigMessageV1 *cfg;
+  MyConfigMessageV1 configuration;
   bool config_loaded = false;
-  if (_esp_now_preferences.getConfig(&config_envelope)) {
+  if (_esp_now_preferences.getConfigData((uint8_t *)&configuration, (uint8_t)sizeof(MyConfigMessageV1))) {
     config_loaded = true;
-    cfg = (MyConfigMessageV1*) config_envelope.payload;
-    _on_log(("loaded sleep_seconds=" + std::to_string(cfg->sleep_seconds) + " foo=" + std::to_string(cfg->foo)).c_str(), ESP_LOG_DEBUG);
+    _on_log(("loaded sleep_seconds=" + std::to_string(configuration.sleep_seconds) +
+             " foo=" + std::to_string(configuration.foo))
+                .c_str(),
+            ESP_LOG_DEBUG);
   } else {
     _on_log("no config loaded", ESP_LOG_INFO);
   }
 
   // Setup node, send message, and then go to sleep.
   if (_esp_now_node.setup()) {
-
     MySecondApplicationMessage message;
     message.temperature = 25.6;
     _esp_now_node.sendMessage(&message, sizeof(MySecondApplicationMessage));
@@ -123,14 +122,14 @@ void setup() {
     _on_log("setup failed", ESP_LOG_ERROR);
   }
 
-  uint32_t timestamp2 = millis();
-  _on_log(("elapsed " + std::to_string(timestamp2 - timestamp1) + "ms").c_str(), ESP_LOG_DEBUG);
-  uint32_t sleep_time_us = SLEEP_TIME_US;
+  uint32_t sleep_time_us = DEFAULT_SLEEP_TIME_US;
   if (config_loaded) {
-    sleep_time_us = cfg->sleep_seconds * MICROSECONDS_PER_SECOND;
+    sleep_time_us = configuration.sleep_seconds * MICROSECONDS_PER_SECOND;
   }
 
-  _on_log(("sleeping for " + std::to_string(sleep_time_us / (MICROSECONDS_PER_SECOND)) + " seconds").c_str(), ESP_LOG_INFO);
+  _on_log(("sleeping for " + std::to_string(sleep_time_us / (MICROSECONDS_PER_SECOND)) + " seconds").c_str(),
+          ESP_LOG_INFO);
+
   esp_deep_sleep(sleep_time_us);
 }
 

@@ -211,7 +211,7 @@ private:
   OnStatus _on_status;
   EspNowCrypt &_crypt;
   esp_netif_t *_netif_sta;
-  uint16_t _config_version;
+  uint16_t _configuration_revision;
   uint32_t _firmware_version;
   bool _setup_successful = false;
   CrtBundleAttach _crt_bundle_attach;

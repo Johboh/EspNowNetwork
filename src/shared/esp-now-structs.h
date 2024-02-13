@@ -49,7 +49,7 @@ struct EspNowDiscoveryResponseV1 {
 struct EspNowChallengeRequestV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_REQUEST_V1;
   uint32_t firmware_version;
-  uint16_t config_version;
+  uint16_t configuration_revision;
   // The challenge that the host should send back/set in [EspNowChallengeResponseV1] or
   // [EspNowChallengeFirmwareResponseV1] reply.
   uint32_t challenge_challenge;
@@ -80,7 +80,9 @@ struct EspNowChallengeFirmwareResponseV1 {
 struct EspNowChallengeConfigResponseV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1;
   uint32_t challenge_challenge; // Challenge from [EspNowChallengeRequestV1].
-  EspNowConfigEnvelope envelope;
+  uint64_t revision;            // the revision ID of the configuration
+  uint8_t length;               // length of configuration data to be sent to Node
+  // The encrypted payload (the configuration data) is appended after this message, and is of length specified above.
 };
 
 #pragma pack(0)

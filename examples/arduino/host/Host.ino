@@ -47,8 +47,7 @@ EspNowHost::OnApplicationMessage _on_application_message = [](EspNowHost::Messag
                                                               const uint8_t *message) {
   // Callback for new application messages.
   auto id = message[0];
-  Serial.println("Got message from 0x" + String(metadata.mac_address) + " with ID " +
-                 id); // + " rssi=" + String(metadata.rssi));
+  Serial.println("Got message from 0x" + String(metadata.mac_address) + " with ID " + id);
   switch (id) {
   case 0x01: {
     MyApplicationMessage *msg = (MyApplicationMessage *)message;
@@ -71,9 +70,9 @@ EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac
   return std::nullopt;
 };
 
-EspNowHost::ConfigUpdateAvailable _config_update_available = [](uint64_t mac_address, uint16_t config_version) {
-  Serial.println(("_config_update_available start ver=" + std::to_string(config_version)).c_str());
-  if (config_version != 1) {
+EspNowHost::ConfigUpdateAvailable _config_update_available = [](uint64_t mac_address, uint16_t configuration_revision) {
+  Serial.println(("_config_update_available start ver=" + std::to_string(configuration_revision)).c_str());
+  if (configuration_revision != 1) {
     EspNowConfigEnvelope env;
     env.version = 1;
     MyConfigMessageV1 cfg;

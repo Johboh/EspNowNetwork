@@ -27,8 +27,11 @@ public:
    */
   virtual bool espNowGetMacForHost(uint8_t *buffer) = 0;
 
-  virtual bool getConfig(EspNowConfigEnvelope *config_envelope) = 0;
-  virtual bool setConfig(EspNowConfigEnvelope *config_envelope) = 0;
+  virtual bool getConfigHeader(ConfigurationHeader *configuration_header) = 0;
+  virtual bool setConfigHeader(ConfigurationHeader *configuration_header) = 0;
+
+  virtual bool getConfigData(uint8_t *buffer, uint8_t length) = 0;
+  virtual bool setConfigData(uint8_t *buffer, uint8_t length) = 0;
 
   /**
    * @brief Commit any changes written.

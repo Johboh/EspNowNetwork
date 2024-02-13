@@ -37,13 +37,16 @@ public:
   /**
    * @brief Set the config envelope that contains the application-specific config data.
    */
-  bool setConfig(EspNowConfigEnvelope *config_envelope) override;
+  bool setConfigHeader(ConfigurationHeader *configuration_header) override;
 
   /**
    * @brief Get the config envelope that contains the application-specific config data.
    * @param config_envelope the EspNowConfigEnvelope to copy the data into
    */
-  bool getConfig(EspNowConfigEnvelope *config_envelope) override;
+  bool getConfigHeader(ConfigurationHeader *configuration_header) override;
+
+  bool getConfigData(uint8_t *buffer, uint8_t length) override;
+  bool setConfigData(uint8_t *buffer, uint8_t length) override;
 
   /**
    * @brief After setting variables, call this to commit/save.
