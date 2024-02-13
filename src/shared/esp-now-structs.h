@@ -77,7 +77,7 @@ struct EspNowChallengeFirmwareResponseV1 {
   char md5[32];                 // MD5 hash of firmware. Does not include trailing \0
 };
 
-struct EspNowChallengeConfigResponseV1 {
+struct EspNowChallengeConfigurationResponseV1 {
   uint8_t id = MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1;
   uint32_t challenge_challenge; // Challenge from [EspNowChallengeRequestV1].
   uint64_t revision;            // the revision ID of the configuration

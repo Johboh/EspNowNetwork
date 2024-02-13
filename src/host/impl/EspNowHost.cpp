@@ -236,14 +236,14 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
               " len=" + std::to_string(metadata->header.length),
           ESP_LOG_INFO);
 
-      EspNowChallengeConfigResponseV1 message;
+      EspNowChallengeConfigurationResponseV1 message;
       message.challenge_challenge = challenge_challenge;
       message.revision = metadata->header.revision;
       message.length = metadata->header.length;
 
-      uint8_t buf[sizeof(EspNowChallengeConfigResponseV1) + metadata->header.length];
-      memcpy(buf, &message, sizeof(EspNowChallengeConfigResponseV1));
-      memcpy(buf + sizeof(EspNowChallengeConfigResponseV1), metadata->payload, metadata->header.length);
+      uint8_t buf[sizeof(EspNowChallengeConfigurationResponseV1) + metadata->header.length];
+      memcpy(buf, &message, sizeof(EspNowChallengeConfigurationResponseV1));
+      memcpy(buf + sizeof(EspNowChallengeConfigurationResponseV1), metadata->payload, metadata->header.length);
 
       sendMessageToTemporaryPeer(mac_addr, &buf, sizeof(buf));
       delete[](uint8_t *) metadata->payload;

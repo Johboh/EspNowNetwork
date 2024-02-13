@@ -280,7 +280,8 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
       }
       case MESSAGE_ID_CHALLENGE_CONFIG_RESPONSE_V1: {
         log("Got challenge update config response.", ESP_LOG_INFO);
-        EspNowChallengeConfigResponseV1 *response = (EspNowChallengeConfigResponseV1 *)decrypted_data.get();
+        EspNowChallengeConfigurationResponseV1 *response =
+            (EspNowChallengeConfigurationResponseV1 *)decrypted_data.get();
         // Validate the challenge for the challenge request/response pair
         if (response->challenge_challenge == request.challenge_challenge) {
           ConfigurationHeader configuration_header;
@@ -290,8 +291,8 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
 
           uint8_t buf[response->length]; // buffer to hold configuration data
 
-          // configuration data is at the end of the EspNowChallengeConfigResponseV1 message
-          memcpy(buf, decrypted_data.get() + sizeof(EspNowChallengeConfigResponseV1), response->length);
+          // configuration data is at the end of the EspNowChallengeConfigurationResponseV1 message
+          memcpy(buf, decrypted_data.get() + sizeof(EspNowChallengeConfigurationResponseV1), response->length);
           _preferences.setConfigData(buf, response->length);
           _preferences.commit();
           log("Saved config (version=" + std::to_string(configuration_header.revision) + " ). Restarting.",
