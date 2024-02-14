@@ -51,7 +51,6 @@ bool EspNowPreferences::espNowGetChannelForHost(uint8_t *channel) {
   return true;
 }
 
-
 bool EspNowPreferences::espNowSetMacForHost(uint8_t mac[MAC_ADDRESS_LENGTH]) {
   auto key = NVS_STORAGE_KEY_HOST_MAC;
   esp_err_t err = nvs_set_blob(_nvs_handle, key, mac, MAC_ADDRESS_LENGTH);
