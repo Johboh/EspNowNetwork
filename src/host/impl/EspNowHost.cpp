@@ -203,6 +203,10 @@ void EspNowHost::handleQueuedMessage(uint8_t *mac_addr, uint8_t *data) {
 void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_challenge) {
   EspNowDiscoveryResponseV1 message;
   message.discovery_challenge = discovery_challenge;
+  uint8_t primary = 0;
+  wifi_second_chan_t second;
+  ESP_ERROR_CHECK(esp_wifi_get_channel(&primary, &second));
+  message.channel = primary;
   sendMessageToTemporaryPeer(mac_addr, &message, sizeof(EspNowDiscoveryResponseV1));
 }
 

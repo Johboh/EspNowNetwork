@@ -9,6 +9,7 @@
 #define NVS_STORAGE "storage"
 // Max key length: 15 chars
 #define NVS_STORAGE_KEY_HOST_MAC "host_mac"
+#define NVS_STORAGE_KEY_HOST_CHAN "host_channel"
 
 EspNowPreferences::EspNowPreferences() {}
 
@@ -29,6 +30,27 @@ void EspNowPreferences::initalizeNVS() {
     return;
   }
 }
+
+bool EspNowPreferences::espNowSetChannelForHost(uint8_t channel) {
+  auto key = NVS_STORAGE_KEY_HOST_CHAN;
+  esp_err_t err = nvs_set_u8(_nvs_handle, key, channel);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to set blob to NVS with key %s (%s)", key, esp_err_to_name(err));
+  }
+  return err == ESP_OK;
+}
+
+bool EspNowPreferences::espNowGetChannelForHost(uint8_t *channel) {
+  auto key = NVS_STORAGE_KEY_HOST_CHAN;
+
+  esp_err_t err = nvs_get_u8(_nvs_handle, key, channel);
+  if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to get u8 from NVS with key %s (%s)", key, esp_err_to_name(err));
+    return false;
+  }
+  return true;
+}
+
 
 bool EspNowPreferences::espNowSetMacForHost(uint8_t mac[MAC_ADDRESS_LENGTH]) {
   auto key = NVS_STORAGE_KEY_HOST_MAC;
