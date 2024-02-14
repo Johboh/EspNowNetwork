@@ -22,9 +22,9 @@
 // between each message.
 #define NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST 50
 
-// wifi channels that will be tried during discovery
-#define WIFI_SCAN_CHANNELS                                                                                             \
-  { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 }
+// We are using 2.4Ghz channels
+#define WIFI_CHANNEL_LOWEST 1
+#define WIFI_CHANNEL_HIGHEST 14 // 14 is technically possible to use, but it should be avoided and is very rarely used.
 
 struct Element {
   size_t data_len = 0;
@@ -132,15 +132,25 @@ bool EspNowNode::setup() {
   // Else, add broadcast address and announce our presence.
   // If the mac we have stored is not valid, we will fail when sending messages,
   // and will clear the MAC we have and restart, and thus end up here again.
+  // Same logic apply for the WiFi channel. We try to get it, but on failure we will go into discovery mode.
+  auto channel_opt = _preferences.espNowGetChannelForHost();
   bool presumably_valid_host_mac_address = _preferences.espNowGetMacForHost(_esp_now_host_address);
-  if (presumably_valid_host_mac_address) {
-    log("Presumably valid MAC address loaded.", ESP_LOG_INFO);
-    uint8_t channel = 1;
-    _preferences.espNowGetChannelForHost(&channel);
-    log("loaded channel " + std::to_string(channel), ESP_LOG_INFO);
-    ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
-  } else {
-    log("No valid MAC address. Going into discovery mode.", ESP_LOG_INFO);
+  bool presumably_valid_configuration = presumably_valid_host_mac_address && isValidWiFiChannel(channel_opt);
+
+  if (presumably_valid_configuration) {
+    auto channel = channel_opt.value();
+    log("Presumably valid MAC address and WiFi channel (" + std::to_string(channel) + ") loaded.", ESP_LOG_INFO);
+    auto r = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+    if (r != ESP_OK) {
+      // Failed to set channel, go into discovery mode. Could happen if this channel is not allowed in this country, see
+      // https://en.wikipedia.org/wiki/List_of_WLAN_channels
+      presumably_valid_configuration = false;
+      log("Failed to set WiFi channel " + std::to_string(channel) + ":", r);
+    }
+  }
+
+  if (!presumably_valid_configuration) {
+    log("No valid MAC address and/or WiFi channel. Going into discovery mode.", ESP_LOG_INFO);
     std::memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
   }
   std::memcpy(peer_info.peer_addr, _esp_now_host_address, ESP_NOW_ETH_ALEN);
@@ -154,7 +164,7 @@ bool EspNowNode::setup() {
     log("Per adding failure:", r);
   }
 
-  if (!presumably_valid_host_mac_address) {
+  if (!presumably_valid_configuration) {
     if (_on_status) {
       _on_status(Status::HOST_DISCOVERY_STARTED);
     }
@@ -167,41 +177,47 @@ bool EspNowNode::setup() {
     request.discovery_challenge = esp_random();
 
     int8_t retries = NUMBER_OF_RETRIES_FOR_DISCOVERY_REQUEST;
+    uint8_t current_channel = WIFI_CHANNEL_LOWEST;
 
-    uint8_t channels[] = WIFI_SCAN_CHANNELS;
-    uint8_t channelCount = sizeof(channels);
-    uint8_t channelIdx = 0;
-
+    // Discover host using a range of WiFi channels on the broadcast MAC address.
     while (retries-- > 0) {
-      uint8_t channel = channels[channelIdx++ % channelCount];
-      log("setting discovery channel " + std::to_string(channel), ESP_LOG_INFO);
-      ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
+      auto channel_to_test = current_channel++;
+      if (current_channel > WIFI_CHANNEL_HIGHEST) {
+        current_channel = WIFI_CHANNEL_LOWEST;
+      }
+      auto r = esp_wifi_set_channel(channel_to_test, WIFI_SECOND_CHAN_NONE);
+      if (r != ESP_OK) {
+        // Failed to set channel. Could happen if this channel is not allowed in this country,
+        // see https://en.wikipedia.org/wiki/List_of_WLAN_channels
+        log("Failed to set WiFi channel " + std::to_string(channel_to_test) +
+                " in discovery mode, skipping this channel:",
+            r);
+        continue;
+      }
 
       // Send discovery request
-      bool confirmed = false;
-      log("Sending broadcast discovery request (" +
+      log("Sending broadcast discovery request on channel " + std::to_string(channel_to_test) + " (" +
               std::to_string(NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST - retries - 1) + ")",
           ESP_LOG_INFO);
       auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowDiscoveryRequestV1), mac_addr);
       if (decrypted_data != nullptr) {
         EspNowDiscoveryResponseV1 *response = (EspNowDiscoveryResponseV1 *)decrypted_data.get();
-        confirmed = response->id == MESSAGE_ID_DISCOVERY_RESPONSE_V1 &&
-                    response->discovery_challenge == request.discovery_challenge;
-        if (confirmed) {
-          channel = response->channel;
-          log("received channel " + std::to_string(channel) + " from discovery response", ESP_LOG_INFO);
-        }
-      }
+        auto confirmed = response->id == MESSAGE_ID_DISCOVERY_RESPONSE_V1 &&
+                         response->discovery_challenge == request.discovery_challenge &&
+                         isValidWiFiChannel(response->channel);
 
-      if (confirmed) {
-        log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
-        _preferences.espNowSetMacForHost(mac_addr);
-        _preferences.espNowSetChannelForHost(channel);
-        _preferences.commit();
-        if (_on_status) {
-          _on_status(Status::HOST_DISCOVERY_SUCCESSFUL);
+        if (confirmed) {
+          log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
+          _preferences.espNowSetMacForHost(mac_addr);
+          _preferences.espNowSetChannelForHost(response->channel);
+          _preferences.commit();
+          if (_on_status) {
+            _on_status(Status::HOST_DISCOVERY_SUCCESSFUL);
+          }
+          esp_restart(); // Start over from the begining.
+        } else {
+          log("Got invalid disovery response. Retrying.", ESP_LOG_WARN);
         }
-        esp_restart(); // Start over from the begining.
       }
 
       // No message/timeout or failed to verify. Try again.
@@ -443,4 +459,17 @@ void EspNowNode::handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char
   }
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   esp_restart();
+}
+
+bool EspNowNode::isValidWiFiChannel(uint8_t channel) {
+  return channel >= WIFI_CHANNEL_LOWEST && channel <= WIFI_CHANNEL_HIGHEST;
+}
+
+bool EspNowNode::isValidWiFiChannel(std::optional<uint8_t> &channel_opt) {
+  if (channel_opt) {
+    auto channel = channel_opt.value();
+    return isValidWiFiChannel(channel);
+  } else {
+    return false;
+  }
 }

@@ -206,6 +206,9 @@ private:
    */
   void handleFirmwareUpdate(char *wifi_ssid, char *wifi_password, char *url, char *md5);
 
+  bool isValidWiFiChannel(uint8_t channel);
+  bool isValidWiFiChannel(std::optional<uint8_t> &channel_opt);
+
 private:
   OnLog _on_log;
   OnStatus _on_status;

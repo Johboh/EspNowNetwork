@@ -3,6 +3,7 @@
 
 #include "Preferences.h"
 #include <nvs_flash.h>
+#include <optional>
 
 /**
  * @brief Storage support on NVS flash.
@@ -40,12 +41,13 @@ public:
   bool espNowSetChannelForHost(uint8_t channel) override;
 
   /**
-   * @brief Get the WiFi channel stored.  Returns false if no channel stored.
-   * @param buffer buffer to store channel
+   * @brief Get the WiFi channel stored.
+   * Please note that the channel is not nessesarily a valid WiFi channel, it could be any uint8_t. Its validity must be
+   * confirmed before used.
    *
-   * @param return true if channel was read successfully.
+   * @param return the channel stored, or std::nullopt if no channel.
    */
-  bool espNowGetChannelForHost(uint8_t *channel) override;
+  std::optional<uint8_t> espNowGetChannelForHost() override;
 
   /**
    * @brief After setting variables, call this to commit/save.

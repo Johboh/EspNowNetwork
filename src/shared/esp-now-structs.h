@@ -38,7 +38,7 @@ struct EspNowDiscoveryRequestV1 {
 struct EspNowDiscoveryResponseV1 {
   uint8_t id = MESSAGE_ID_DISCOVERY_RESPONSE_V1;
   uint32_t discovery_challenge; // Challenge from [EspNowDiscoveryRequestV1]
-  uint8_t channel;
+  uint8_t channel;              // ESP-NOW/WiFi channel to use when sending messages. Must be a valid WiFi channel.
 };
 
 /**

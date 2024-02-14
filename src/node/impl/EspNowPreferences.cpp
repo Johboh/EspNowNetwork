@@ -40,15 +40,16 @@ bool EspNowPreferences::espNowSetChannelForHost(uint8_t channel) {
   return err == ESP_OK;
 }
 
-bool EspNowPreferences::espNowGetChannelForHost(uint8_t *channel) {
+std::optional<uint8_t> EspNowPreferences::espNowGetChannelForHost() {
   auto key = NVS_STORAGE_KEY_HOST_CHAN;
 
-  esp_err_t err = nvs_get_u8(_nvs_handle, key, channel);
+  uint8_t channel = 0;
+  esp_err_t err = nvs_get_u8(_nvs_handle, key, &channel);
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to get u8 from NVS with key %s (%s)", key, esp_err_to_name(err));
-    return false;
+    return std::nullopt;
   }
-  return true;
+  return channel;
 }
 
 bool EspNowPreferences::espNowSetMacForHost(uint8_t mac[MAC_ADDRESS_LENGTH]) {

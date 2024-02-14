@@ -2,6 +2,7 @@
 #define __ESP_NOW_I_PREFERENCES_H__
 
 #include <cstdint>
+#include <optional>
 
 namespace EspNowNetwork {
 
@@ -32,12 +33,13 @@ public:
   virtual bool espNowSetChannelForHost(uint8_t channel) = 0;
 
   /**
-   * @brief Get the WiFi channel stored.  Returns false if no channel stored.
-   * @param buffer buffer to store channel
+   * @brief Get the WiFi channel stored.
+   * Please note that the channel is not nessesarily a valid WiFi channel, it could be any uint8_t. Its validity must be
+   * confirmed before used.
    *
-   * @param return true if channel was read successfully.
+   * @param return the channel stored, or std::nullopt if no channel.
    */
-  virtual bool espNowGetChannelForHost(uint8_t *channel) = 0;
+  virtual std::optional<uint8_t> espNowGetChannelForHost() = 0;
 
   /**
    * @brief Commit any changes written.
