@@ -12,8 +12,8 @@ jobs:
           - name: v512_build
             version_number: v5.1.2
             target: esp32c6
-          - name: v520_build
-            version_number: v5.2.0
+          - name: v52_build
+            version_number: v5.2
             target: esp32c6
         path:
           - name: examples/espidf/host
