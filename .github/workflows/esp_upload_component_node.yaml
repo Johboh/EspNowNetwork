@@ -18,6 +18,18 @@ jobs:
       - name: Move node
         run: mv EspNowNetworkNode/* ./
 
+      - name: Remove node and host idf folder
+        run: rm -f EspNowNetworkNode EspNowNetworkHost
+
+      - name: Remove host code
+        run: rm -f src/host
+
+      - name: Remove arduino examples and library related files
+        run: rm -f examples/arduino library.json library.properties
+
+      - name: Remove github actions
+        run: rm -f .github
+
       - name: Replace ./.. with ./
         run: sed -i 's|./../|./|g' CMakeLists.txt
 

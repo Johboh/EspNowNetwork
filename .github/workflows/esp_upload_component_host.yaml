@@ -15,8 +15,20 @@ jobs:
       - name: Remove full
         run: rm -f CMakeLists.txt idf_component.yml LICENSE
 
-      - name: Move node
+      - name: Move host
         run: mv EspNowNetworkHost/* ./
+
+      - name: Remove node and host idf folder
+        run: rm -f EspNowNetworkNode EspNowNetworkHost
+
+      - name: Remove node code
+        run: rm -f src/node
+
+      - name: Remove arduino examples and library related files
+        run: rm -f examples/arduino library.json library.properties
+
+      - name: Remove github actions
+        run: rm -f .github
 
       - name: Replace ./.. with ./
         run: sed -i 's|./../|./|g' CMakeLists.txt
