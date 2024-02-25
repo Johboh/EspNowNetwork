@@ -123,8 +123,7 @@ bool EspNowNode::setup() {
 
   esp_now_peer_info_t peer_info;
   peer_info.ifidx = WIFI_IF_STA;
-  // Channel 0 means "use the current channel which station or softap is on". We should hardcode this to a specific
-  // channel so we for sure use same channel on both router and nodes.
+  // Channel 0 means "use the same channel as WiFi". We don't use WiFi, but ESP-NOW is using the MAC layer beneath.
   peer_info.channel = 0;
   peer_info.encrypt = false; // Never use esp NOW encryption.
 

@@ -255,8 +255,7 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
 void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length) {
   esp_now_peer_info_t peer_info;
   peer_info.ifidx = _wifi_interface == WiFiInterface::AP ? WIFI_IF_AP : WIFI_IF_STA;
-  // Channel 0 means "use the current channel which station or softap is on". We should hardcode this to a specific
-  // channel so we for sure use same channel on both router and nodes.
+  // Channel 0 means "use the current channel which station or softap is on".
   peer_info.channel = 0;
   peer_info.encrypt = false; // Never use esp NOW encryption.
   std::memcpy(peer_info.peer_addr, mac_addr, ESP_NOW_ETH_ALEN);
