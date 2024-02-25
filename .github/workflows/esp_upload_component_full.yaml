@@ -13,13 +13,13 @@ jobs:
       - uses: actions/checkout@v4.1.1
 
       - name: Remove node and host idf folder
-        run: rm -f EspNowNetworkNode EspNowNetworkHost
+        run: rm -rf EspNowNetworkNode EspNowNetworkHost
 
       - name: Remove arduino examples and library related files
-        run: rm -f examples/arduino library.json library.properties
+        run: rm -rf examples/arduino library.json library.properties
 
       - name: Remove github actions
-        run: rm -f .github
+        run: rm -rf .github
 
       - name: Upload EspNowNetwork to component registry
         uses: espressif/upload-components-ci-action/@v1

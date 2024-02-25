@@ -13,22 +13,22 @@ jobs:
       - uses: actions/checkout@v4.1.1
 
       - name: Remove full
-        run: rm -f CMakeLists.txt idf_component.yml LICENSE
+        run: rm -rf CMakeLists.txt idf_component.yml LICENSE
 
       - name: Move host
         run: mv EspNowNetworkHost/* ./
 
       - name: Remove node and host idf folder
-        run: rm -f EspNowNetworkNode EspNowNetworkHost
+        run: rm -rf EspNowNetworkNode EspNowNetworkHost
 
       - name: Remove node code
-        run: rm -f src/node
+        run: rm -rf src/node
 
       - name: Remove arduino examples and library related files
-        run: rm -f examples/arduino library.json library.properties
+        run: rm -rf examples/arduino library.json library.properties
 
       - name: Remove github actions
-        run: rm -f .github
+        run: rm -rf .github
 
       - name: Replace ./.. with ./
         run: sed -i 's|./../|./|g' CMakeLists.txt
