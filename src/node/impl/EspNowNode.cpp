@@ -228,7 +228,11 @@ bool EspNowNode::setup() {
 
     // So we never got a message after several retries.
     // Let caller now this.
-    return false;
+    success = false;
+  }
+
+  if (!success) {
+    teardown(); // Teardown so we can try again.
   }
 
   _setup_successful = success;
