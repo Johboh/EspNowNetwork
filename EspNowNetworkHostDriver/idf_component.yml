@@ -4,4 +4,6 @@ url: https://github.com/Johboh/EspNowNetwork
 dependencies:
   idf: ">=4.4"
   johboh/EspNowNetworkHost:
-    version: ">=0.6.1"
+    version: ">=0.6.0"
+  johboh/MQTTRemote:
+    version: ">=4.0.1"

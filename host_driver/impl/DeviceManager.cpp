@@ -16,8 +16,6 @@ void DeviceManager::handle() {
     device.handle(_last_message_ms[device.macAddress()]);
   }
 
-  auto now = DeviceUtils::millis();
-
   auto connected = _is_connected && _is_connected();
   if (!_was_connected && connected) {
     for (const auto &device_pair : _devices) {

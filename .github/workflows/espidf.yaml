@@ -18,6 +18,7 @@ jobs:
         path:
           - name: examples/espidf/host
           - name: examples/espidf/node
+          - name: examples/espidf/host_driver
           - name: integration
 
     steps:

@@ -30,6 +30,9 @@ jobs:
       - name: Remove github actions
         run: rm -rf .github
 
+      - name: Remove host driver
+        run: rm -rf host_driver
+
       - name: Replace ./.. with ./
         run: sed -i 's|./../|./|g' CMakeLists.txt
 

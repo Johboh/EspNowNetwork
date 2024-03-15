@@ -1,3 +1,4 @@
+#include "DeviceFootPedal.h"
 #include "esp-now-device-structs.h"
 #include <Device.h>
 #include <DeviceManager.h>

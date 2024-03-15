@@ -10,10 +10,12 @@
 namespace FirmwareCheckerUtils {
 
 /**
- * @brief Given an URL, get the content of the file at that URL.
+ * @brief Given an URL, get the content of the file as a string.
  *
- * @param url
- * @return std::optional<std::string>
+ * Very little error handling.
+ *
+ * @param url the URL to get the string content for.
+ * @return content as a string, or std::nullopt.
  */
 static std::optional<std::string> getContentStringForUrl(std::string &url) {
 
@@ -30,12 +32,10 @@ static std::optional<std::string> getContentStringForUrl(std::string &url) {
   esp_http_client_set_header(client, "Accept", "*/*");
   esp_http_client_set_timeout_ms(client, HTTP_REMOTE_TIMEOUT_MS);
 
-  bool success = false;
   esp_err_t r = esp_http_client_open(client, 0);
   if (r == ESP_OK) {
     esp_http_client_fetch_headers(client);
     auto status_code = esp_http_client_get_status_code(client);
-    auto content_length = esp_http_client_get_content_length(client);
 
     if (status_code == 200) {
       int total_read = 0;

@@ -1,6 +1,6 @@
 FILE(GLOB_RECURSE host_driver_sources "./../host_driver/impl/*.*")
 
-set(required_components esp_wifi mbedtls)
+set(required_components driver esp_http_client)
 
 idf_component_register(COMPONENT_NAME "EspNowNetworkHostDriver"
                         SRCS ${host_driver_sources}
