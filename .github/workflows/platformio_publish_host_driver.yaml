@@ -23,9 +23,6 @@ jobs:
       - name: Remove esp IDF stuff and unused sources
         run: rm -rf src/node examples/*/node examples/*/host EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
 
-      - name: Move host driver to src
-        run: mv host_driver ./src/
-
       - name: ESP IDF CMake stuff
         run: rm -rf CMakeLists.txt idf_component.yml
 

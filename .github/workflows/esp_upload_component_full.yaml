@@ -16,7 +16,7 @@ jobs:
         run: rm -rf EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver
 
       - name: Remove arduino examples and library related files
-        run: rm -rf host_driver examples/arduino examples/espidf/host_driver library.json library.properties
+        run: rm -rf src/host_driver examples/arduino examples/espidf/host_driver library.json library.properties
 
       - name: Remove github actions
         run: rm -rf .github

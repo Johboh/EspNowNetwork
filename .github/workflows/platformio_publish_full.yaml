@@ -15,7 +15,7 @@ jobs:
           python-version: '3.9'
 
       - name: Remove esp IDF stuff and unused sources
-        run: rm -rf host_driver examples/*/host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
+        run: rm -rf src/host_driver examples/*/host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
 
       - name: ESP IDF CMake stuff
         run: rm -rf CMakeLists.txt idf_component.yml

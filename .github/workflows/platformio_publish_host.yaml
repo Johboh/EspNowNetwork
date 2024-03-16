@@ -21,7 +21,7 @@ jobs:
         run: mv EspNowNetworkHost/library.json ./
 
       - name: Remove esp IDF stuff and unused sources
-        run: rm -rf src/node host_driver examples/*/node examples/*/host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
+        run: rm -rf src/node src/host_driver examples/*/node examples/*/host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
 
       - name: ESP IDF CMake stuff
         run: rm -rf CMakeLists.txt idf_component.yml

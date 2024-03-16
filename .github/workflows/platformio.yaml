@@ -8,15 +8,16 @@ jobs:
         example:
           - path: examples/arduino/host
             library: EspNowNetworkHost/library.json
-            remove: "src/node"
+            remove: "src/node src/host_driver"
           - path: examples/arduino/node
             library: EspNowNetworkNode/library.json
-            remove: "src/host"
+            remove: "src/host src/host_driver"
           - path: examples/arduino/host_driver
             library: EspNowNetworkHostDriver/library.json
             remove: "src/node"
           - path: integration/arduino
             library: ./library.json
+            remove: "src/host_driver"
 
     steps:
       - uses: actions/checkout@v4.1.1
@@ -31,10 +32,6 @@ jobs:
           python-version: '3.9'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
-
-      - name: Copy src for host driver to src directly if example is host_driver
-        run: mv host_driver ./src/
-        if: ${{ matrix.example.path == 'examples/arduino/host_driver' }}
 
       - name: Remove files
         run: rm -rf ${{ matrix.example.remove }}
