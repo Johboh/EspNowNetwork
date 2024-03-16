@@ -41,7 +41,7 @@ There are a set if different variants of this library you can use.
       johboh/EspNowNetworkHost:
         version: ">=0.6.2"
     ```
-- **EspNowNetworkHostDriver**: Same as EspNowNetworkHost, but with support for "virtual" nodes and firmware/OTA updates. See the [Arduino](examples/arduino/host_driver/Host.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) example.
+- **EspNowNetworkHostDriver**: Same as EspNowNetworkHost, but with support for "virtual" nodes and firmware/OTA updates. See the [Arduino](examples/arduino/host_driver/HostDriver.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) example.
   - PlatformIO: Add the following to `libs_deps`:
     ```
     Johboh/EspNowNetworkHostDriver@^0.6.2
@@ -56,7 +56,7 @@ There are a set if different variants of this library you can use.
 
 ### Examples
 - [Arduino: Host](examples/arduino/host/Host.ino)
-- [Arduino: Host Driver](examples/arduino/host_driver/Host.ino)
+- [Arduino: Host Driver](examples/arduino/host_driver/HostDriver.ino)
 - [Arduino: Node](examples/arduino/node/Node.ino)
 - [ESP-IDF: Host](examples/espidf/host/main/main.cpp)
 - [ESP-IDF: Host Driver](examples/espidf/host_driver/main/main.cpp)
