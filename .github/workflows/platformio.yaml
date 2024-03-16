@@ -7,7 +7,13 @@ jobs:
       matrix:
         example:
           - name: host
+            library: EspNowNetworkHost/library.json
           - name: node
+            library: EspNowNetworkNode/library.json
+          - name: host_driver
+            library: EspNowNetworkHostDriver/library.json
+          - name: integration
+            library: ./library.json
 
     steps:
       - uses: actions/checkout@v4.1.1
@@ -22,6 +28,9 @@ jobs:
           python-version: '3.9'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
+
+      - name: Move library to root
+        run: mv ${{ matrix.example.library }} ./
 
       - name: Build PlatformIO examples
         run: pio ci --lib="." --board=lolin_c3_mini --project-option="build_unflags = -std=gnu++11" --project-option="build_flags = -std=gnu++17" --project-option="platform=espressif32@6.4.0" --project-option="lib_ldf_mode=deep"
