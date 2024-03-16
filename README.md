@@ -1,11 +1,11 @@
 # EspNowNetwork
-[![Platform I/O CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetwork)
+[![PlatformIO CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetwork)
 [![ESP-IDF CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetwork)
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 [![Clang-format](https://github.com/Johboh/EspNowNetwork/actions/workflows/clang-format.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork)
 
 
-Arduino (using Arduino IDE or Platform I/O) and ESP-IDF (using Espressif IoT Development Framework or Platform I/O) compatible library for setting up a network of ESP NOW nodes
+Arduino (using Arduino IDE or PlatformIO) and ESP-IDF (using Espressif IoT Development Framework or PlatformIO) compatible library for setting up a network of ESP NOW nodes
 
 ### Usage/Purpose
 The use case for the EspNowNetwork is to run a a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network for battery powered sensors.
@@ -18,34 +18,41 @@ Features:
 - **Over The Air/OTA**: A node can be updated Over The Air. The node report their firmware version upon handsake, and the host can send back wifi credentials and an URL where to download the new firmware. The node will download the firmware, write it and restart.
 
 ### Installation
-#### Platform I/O (Arduino or ESP-IDF):
-Add the following to `libs_deps`:
-```
-   Johboh/EspNowNetwork
-```
-#### Espressif IoT Development Framework:
-You have three options here. You can either use the full library with both the host and the node code, or only the host or the node variant. Suggestion is to only use the host library on the host, and only the node for the node.
-
-In your existing `idf_component.yml` or in a new `idf_component.yml` next to your main component:
-
-*Host only*
-```
-dependencies:
-  johboh/EspNowNetworkHost:
-    version: ">=0.6.1"
-```
-*Node only*
-```
-dependencies:
-  johboh/EspNowNetworkNode:
-    version: ">=0.6.1"
-```
-*Full*
-```
-dependencies:
-  johboh/EspNowNetwork:
-    version: ">=0.6.1"
-```
+There are a set if different variants of this library you can use.
+- **EspNowNetworkNode**: This is the node only code. Use this in your node project.
+  - PlatformIO: Add the following to `libs_deps`:
+    ```
+    Johboh/EspNowNetworkNode@^0.6.1
+    ```
+  - Add to `idf_component.yml` next to your main component:
+    ```
+    dependencies:
+      johboh/EspNowNetworkNode:
+        version: ">=0.6.1"
+    ```
+- **EspNowNetworkHost**: This is the host only code. It contains the basics for receiving messages from the node. But for a real life environment, you want to handle different kind of nodes and application messages, as well as firmware/OTA support for the nodes. For that, you can instead use the **EspNowNetworkHostDriver** (see below).
+  - PlatformIO: Add the following to `libs_deps`:
+    ```
+    Johboh/EspNowNetworkHost@^0.6.1
+    ```
+  - Add to `idf_component.yml` next to your main component:
+    ```
+    dependencies:
+      johboh/EspNowNetworkHost:
+        version: ">=0.6.1"
+    ```
+- **EspNowNetworkHostDriver**: Same as EspNowNetworkHost, but with support for "virtual" nodes and firmware/OTA updates. See the [Arduino](examples/arduino/host_driver/Host.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) example.
+  - PlatformIO: Add the following to `libs_deps`:
+    ```
+    Johboh/EspNowNetworkHostDriver@^0.6.1
+    ```
+  - Add to `idf_component.yml` next to your main component:
+    ```
+    dependencies:
+      johboh/EspNowNetworkHostDriver:
+        version: ">=0.6.1"
+    ```
+- **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects.
 
 ### Examples
 - [Arduino: Host](examples/arduino/host/Host.ino)
@@ -67,18 +74,17 @@ ota_0,     app,    ota_0,       ,         1500K
 ota_1,     app,    ota_1,       ,         1500K
 spiffs,   data,   spiffs,       ,          800K
 ```
-To set partition table, save above in a file called `partitions_with_ota.csv`. For ESP-IDF, specify to use this one using menuconfig. For platform I/O, add the following to your `platformio.ini`: `board_build.partitions = partitions_with_ota.csv`
+To set partition table, save above in a file called `partitions_with_ota.csv`. For ESP-IDF, specify to use this one using menuconfig. For platformIO, add the following to your `platformio.ini`: `board_build.partitions = partitions_with_ota.csv`
 
 ### Functionallity verified on the following platforms and frameworks
-- ESP32 (tested with platform I/O [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@4.4.6](https://github.com/espressif/esp-idf) / [ESP-IDF@5.1.2](https://github.com/espressif/esp-idf) / [ESP-IDF@5.2.0](https://github.com/espressif/esp-idf) on ESP32-S2, ESP32-C3 and ESP32-C6)
+- ESP32 (tested with platformIO [espressif32@6.4.0](https://github.com/platformio/platform-espressif32) / [arduino-esp32@2.0.11](https://github.com/espressif/arduino-esp32) / [ESP-IDF@4.4.6](https://github.com/espressif/esp-idf) / [ESP-IDF@5.1.2](https://github.com/espressif/esp-idf) / [ESP-IDF@5.2.0](https://github.com/espressif/esp-idf) on ESP32-S2, ESP32-C3 and ESP32-C6)
 
 Newer version most probably work too, but they have not been verified.
 
 ### Dependencies
-- For Host Driver, _optional_: https://github.com/Johboh/MQTTRemote
-  - There is a copy of [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) in this library from [Johboh/MQTTRemote](https://github.com/Johboh/MQTTRemote). You can either add a dependency on [MQTTRemote](https://github.com/Johboh/MQTTRemote), or implement/adapt/forward to your own MQTT implementation. This library only depend on the [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) interface.
+- *For Host Driver, an MQTT implementation is required.* There is a copy of [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) in this library from [Johboh/MQTTRemote](https://github.com/Johboh/MQTTRemote). You can either add a dependency on [MQTTRemote](https://github.com/Johboh/MQTTRemote) to get a fully working MQTT client (the examples are using this dependency), or you can implement/adapt/forward to your own MQTT implementation. This library only depend on the [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) interface.
 - Needs C++17 for `std::optional`.
-  - For platform I/O in `platformio.ini`:
+  - For platformIO in `platformio.ini`:
     ```C++
     build_unflags=-std=gnu++11 # "Disable" C++11
     build_flags=-std=gnu++17 # "Enable" C++17
