@@ -18,8 +18,8 @@ jobs:
       - name: Move host
         run: mv EspNowNetworkHost/* ./
 
-      - name: Remove node and host idf folder
-        run: rm -rf EspNowNetworkNode EspNowNetworkHost
+      - name: Remove node and host and host driver idf folder
+        run: rm -rf EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver
 
       - name: Remove node code
         run: rm -rf src/node
