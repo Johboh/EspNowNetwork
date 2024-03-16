@@ -98,6 +98,12 @@ void app_main(void) {
   _firmware_checker.setOnLog(std::bind(&HostDriver::onFirwmareLog, _host_driver, _1, _2));
   _firmware_checker.setOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, _host_driver, _1, _2, _3, _4));
 
+  // setup firmware devices
+  for (const auto &device_ref : _devices) {
+    auto &device = device_ref.get();
+    _available_firmware_devices.emplace(FirmwareChecker::Device{device.type(), device.hardware()});
+  }
+
   // Connect to WIFI
   auto connected = _wifi_helper.connectToAp(wifi_ssid, wifi_password, true, 10000);
   if (connected) {
@@ -121,12 +127,6 @@ void app_main(void) {
     _firmware_checker.start();
   } else {
     ESP_LOGE(TAG, "Failed to connect to WiFI");
-  }
-
-  // setup firmware devices
-  for (const auto &device_ref : _devices) {
-    auto &device = device_ref.get();
-    _available_firmware_devices.emplace(FirmwareChecker::Device{device.type(), device.hardware()});
   }
 
   while (1) {

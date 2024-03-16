@@ -83,12 +83,10 @@ FirmwareChecker _firmware_checker(firmware_update_base_url, _available_firmware_
 void setup() {
   Serial.begin(115200);
 
-  _wifi_helper.connect();
-  esp_wifi_set_ps(WIFI_PS_NONE); // No sleep on WiFi to be able to receive ESP-NOW packages without being in AP mode.
-  _ota_helper.setup();
-
-  // Start host driver with FirmwareChecker
-  _host_driver.setup(_firmware_checker);
+  // Forward logging callbacks.
+  _device_manager.setOnLog(std::bind(&HostDriver::onDeviceManagerLog, _host_driver, _1, _2));
+  _firmware_checker.setOnLog(std::bind(&HostDriver::onFirwmareLog, _host_driver, _1, _2));
+  _firmware_checker.setOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, _host_driver, _1, _2, _3, _4));
 
   // setup firmware devices
   for (const auto &device_ref : _devices) {
@@ -96,9 +94,13 @@ void setup() {
     _available_firmware_devices.emplace(FirmwareChecker::Device{device.type(), device.hardware()});
   }
 
-  _device_manager.setOnLog(std::bind(&HostDriver::onDeviceManagerLog, _host_driver, _1, _2));
-  _firmware_checker.setOnLog(std::bind(&HostDriver::onFirwmareLog, _host_driver, _1, _2));
-  _firmware_checker.setOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, _host_driver, _1, _2, _3, _4));
+  // Connect to wifi.
+  _wifi_helper.connect();
+  esp_wifi_set_ps(WIFI_PS_NONE); // No sleep on WiFi to be able to receive ESP-NOW packages without being in AP mode.
+  _ota_helper.setup();
+
+  // Start host driver with FirmwareChecker
+  _host_driver.setup(_firmware_checker);
 }
 
 void loop() {
