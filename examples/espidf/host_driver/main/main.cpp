@@ -8,6 +8,7 @@
 #include <OtaHelper.h>
 #include <WiFiHelper.h>
 #include <esp_log.h>
+#include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <optional>
@@ -95,6 +96,8 @@ void app_main(void) {
   if (connected) {
     // Connected to WIFI
 
+    esp_wifi_set_ps(WIFI_PS_NONE); // No sleep on WiFi to be able to receive ESP-NOW packages without being in AP mode.
+
     // Start OTA
     if (!_ota_helper.start()) {
       ESP_LOGE(TAG, "Failed to start OTA");
@@ -117,6 +120,7 @@ void app_main(void) {
 
   while (1) {
     _device_manager.handle();
+    _firmware_checker.handle();
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
     fflush(stdout);
