@@ -22,35 +22,35 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkNode**: This is the node only code. Use this in your node project.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkNode@^0.6.2
+    Johboh/EspNowNetworkNode@^0.6.1
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkNode:
-        version: ">=0.6.2"
+        version: ">=0.6.1"
     ```
 - **EspNowNetworkHost**: This is the host only code. It contains the basics for receiving messages from the node. But for a real life environment, you want to handle different kind of nodes and application messages, as well as firmware/OTA support for the nodes. For that, you can instead use the **EspNowNetworkHostDriver** (see below).
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHost@^0.6.2
+    Johboh/EspNowNetworkHost@^0.6.1
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHost:
-        version: ">=0.6.2"
+        version: ">=0.6.1"
     ```
 - **EspNowNetworkHostDriver**: Same as EspNowNetworkHost, but with support for "virtual" nodes and firmware/OTA updates. See the [Arduino](examples/arduino/host_driver/HostDriver.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) example.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHostDriver@^0.6.2
+    Johboh/EspNowNetworkHostDriver@^0.6.1
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHostDriver:
-        version: ">=0.6.2"
+        version: ">=0.6.1"
     ```
 - **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects.
 
