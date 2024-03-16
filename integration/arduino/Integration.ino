@@ -27,7 +27,7 @@ EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac
 };
 
 String logLevelToString(const esp_log_level_t log_level) {
-  std::string level;
+  String level;
   switch (log_level) {
   case ESP_LOG_NONE:
     level = "none";
