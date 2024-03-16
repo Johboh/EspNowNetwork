@@ -26,12 +26,40 @@ EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac
   return std::nullopt;
 };
 
+String logLevelToString(const esp_log_level_t log_level) {
+  std::string level;
+  switch (log_level) {
+  case ESP_LOG_NONE:
+    level = "none";
+    break;
+  case ESP_LOG_ERROR:
+    level = "error";
+    break;
+  case ESP_LOG_WARN:
+    level = "warning";
+    break;
+  case ESP_LOG_INFO:
+    level = "info";
+    break;
+  case ESP_LOG_DEBUG:
+    level = "debug";
+    break;
+  case ESP_LOG_VERBOSE:
+    level = "verbose";
+    break;
+  default:
+    level = "unknown";
+    break;
+  }
+  return level;
+}
+
 EspNowHost::OnLog _on_host_log = [](const std::string message, const esp_log_level_t log_level) {
-  Serial.println(("EspNowHost (" + log_level + "): " + message).c_str());
+  Serial.println(("EspNowHost (" + logLevelToString(log_level) + "): " + message).c_str());
 };
 
 EspNowNode::OnLog _on_node_log = [](const std::string message, const esp_log_level_t log_level) {
-  Serial.println(("EspNowNode (" + log_level + "): " + message).c_str());
+  Serial.println(("EspNowNode (" + logLevelToString(log_level) + "): " + message).c_str());
 };
 
 EspNowNode::OnStatus _on_status = [](EspNowNode::Status status) {};
