@@ -27,11 +27,11 @@ EspNowHost::FirmwareUpdateAvailable _firmware_update_available = [](uint64_t mac
 };
 
 EspNowHost::OnLog _on_host_log = [](const std::string message, const esp_log_level_t log_level) {
-  Serial.println(("EspNowHost (" + level + "): " + message).c_str());
+  Serial.println(("EspNowHost (" + log_level + "): " + message).c_str());
 };
 
 EspNowNode::OnLog _on_node_log = [](const std::string message, const esp_log_level_t log_level) {
-  Serial.println(("EspNowNode (" + level + "): " + message).c_str());
+  Serial.println(("EspNowNode (" + log_level + "): " + message).c_str());
 };
 
 EspNowNode::OnStatus _on_status = [](EspNowNode::Status status) {};
@@ -45,8 +45,6 @@ EspNowHost _esp_now_host(_esp_now_crypt, EspNowHost::WiFiInterface::STA, _on_new
 
 void setup() {
   Serial.begin(115200);
-
-  esp_wifi_set_ps(WIFI_PS_NONE); // No sleep on WiFi to be able to receive ESP-NOW packages without being in AP mode.
 
   _esp_now_host.setup();
   _esp_now_preferences.initalizeNVS();
