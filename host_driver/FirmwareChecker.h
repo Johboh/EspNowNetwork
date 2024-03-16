@@ -66,9 +66,8 @@ public:
    *
    * The following must exist:
    * firmware.bin - the binary itself.
-   * firmware_version.txt - containing the firmware version as a number
-   * The following is optional:
-   * firmware.md5 - the MD5 hash of the binary, as 32 hex characters
+   * firmware_version.txt - containing the firmware version as a number.
+   * firmware.md5 - the MD5 hash of the binary, as 32 hex characters.
    *
    * Example:
    * if the base_url is http://192.168.1.128/ the device type is "motion" and hardware is "lolin_c2",
@@ -77,10 +76,6 @@ public:
    * The URL to the binary is what will be send to the node on OTA update.
    * If there is no hardware, the hardware part will be omitted and the final URL will be
    * http://192.168.1.128/motion/firmware_version.txt will be appended to this url, followed by firmware_version.txt.
-   * Example: http://192.168.1.128/. If device type is
-   *
-   * It will also try to download firmware.md5. If found, will include MD5 hash of firmware when doing OTA to verify the
-   * binary, but its optional.
    *
    * Note! No support for HTTPS as of now.
    *

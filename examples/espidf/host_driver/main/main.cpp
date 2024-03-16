@@ -14,6 +14,8 @@
 #include <optional>
 #include <string>
 
+using namespace std::placeholders;
+
 #define TAG "example"
 
 const char hostname[] = "my-host-driver";
@@ -91,6 +93,11 @@ void app_main();
 
 void app_main(void) {
 
+  // Forward logging callbacks.
+  _device_manager.setOnLog(std::bind(&HostDriver::onDeviceManagerLog, _host_driver, _1, _2));
+  _firmware_checker.setOnLog(std::bind(&HostDriver::onFirwmareLog, _host_driver, _1, _2));
+  _firmware_checker.setOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, _host_driver, _1, _2, _3, _4));
+
   // Connect to WIFI
   auto connected = _wifi_helper.connectToAp(wifi_ssid, wifi_password, true, 10000);
   if (connected) {
@@ -107,7 +114,7 @@ void app_main(void) {
     _mqtt_remote.start();
 
     // Start host driver with FirmwareChecker
-    _host_driver.setup();
+    _host_driver.setup(_firmware_checker);
   } else {
     ESP_LOGE(TAG, "Failed to connect to WiFI");
   }

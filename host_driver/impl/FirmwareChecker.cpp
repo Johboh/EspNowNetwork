@@ -1,5 +1,6 @@
 #include "FirmwareCheckerUtils.h"
 #include <FirmwareChecker.h>
+#include <cstdlib>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -31,20 +32,20 @@ void FirmwareChecker::handle() {
 
     auto device_and_hardware_str = device.type + (hardware_opt ? " and hardware " + hardware_opt.value() : "");
 
-    log("Checking firmware version for type " + device_and_hardware_str + " using URL " + version_url, ESP_LOG_INFO);
+    log("Checking for type " + device_and_hardware_str + " using URL " + version_url, ESP_LOG_INFO);
 
     std::optional<uint32_t> version = std::nullopt;
     std::optional<std::string> md5 = std::nullopt;
 
     auto version_string = FirmwareCheckerUtils::getContentStringForUrl(version_url);
-    if (version_string) {
-      uint32_t version_from_string = std::stol(*version_string);
+    if (version_string && !version_string.value().empty()) {
+      uint32_t version_from_string = strtol(version_string.value().c_str(), nullptr, 10);
       if (version_from_string > 0) {
         version = version_from_string;
-        log("Got firmware version for type " + device_and_hardware_str + ": " + std::to_string(*version), ESP_LOG_INFO);
+        log("Got firmware version for type " + device_and_hardware_str + ": " + std::to_string(version.value()),
+            ESP_LOG_INFO);
       } else {
-        log("Got invalid firmware version for type " + device_and_hardware_str + ": " +
-                std::string(version_string->c_str()),
+        log("Got invalid firmware version for type " + device_and_hardware_str + ": " + version_string.value(),
             ESP_LOG_WARN);
       }
     } else {
@@ -53,15 +54,15 @@ void FirmwareChecker::handle() {
 
     md5 = FirmwareCheckerUtils::getContentStringForUrl(md5_url);
     if (md5) {
-      log("Got firmware md5 for type " + device_and_hardware_str + ": " + *md5, ESP_LOG_INFO);
+      log("Got firmware md5 for type " + device_and_hardware_str + ": " + md5.value(), ESP_LOG_INFO);
     } else {
       log("Failed to get firmware md5 for " + device_and_hardware_str, ESP_LOG_WARN);
     }
 
     if (version && md5) {
-      _firmware_version_for_device[device] = Firmware{*version, *md5};
+      _firmware_version_for_device[device] = Firmware{version.value(), md5.value()};
       if (_on_available_firmware) {
-        _on_available_firmware(device.type, device.hardware, *version, *md5);
+        _on_available_firmware(device.type, device.hardware, version.value(), md5.value());
       }
     } else {
       // On failure, clear.

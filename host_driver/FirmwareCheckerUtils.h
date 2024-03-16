@@ -2,6 +2,7 @@
 #define __FIRMWARE_CHECKER_UTILS_H__
 
 #include <esp_http_client.h>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -19,8 +20,12 @@ namespace FirmwareCheckerUtils {
  */
 static std::optional<std::string> getContentStringForUrl(std::string &url) {
 
-  const int buffer_size = 1024;
-  char *buffer = (char *)malloc(buffer_size); // Should be enough for everyone.
+  const int buffer_size = 1024; // Should be enough for everyone.
+  std::unique_ptr<char[]> buffer(new (std::nothrow) char[buffer_size]);
+  if (buffer == nullptr) {
+    // Oh noes!
+    return std::nullopt;
+  }
   std::optional<std::string> content_str = std::nullopt;
 
   esp_http_client_config_t config = {};
@@ -40,10 +45,10 @@ static std::optional<std::string> getContentStringForUrl(std::string &url) {
     if (status_code == 200) {
       int total_read = 0;
       while (total_read < buffer_size) {
-        int read = esp_http_client_read(client, buffer + total_read, buffer_size - total_read);
+        int read = esp_http_client_read(client, buffer.get() + total_read, buffer_size - total_read);
         if (read <= 0) { // Done or error
           if (esp_http_client_is_complete_data_received(client)) {
-            content_str = std::string(buffer, total_read);
+            content_str = std::string(buffer.get(), total_read);
           }
           break;
         }
@@ -55,9 +60,6 @@ static std::optional<std::string> getContentStringForUrl(std::string &url) {
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
 
-  if (buffer != nullptr) {
-    free(buffer);
-  }
   return content_str;
 }
 
