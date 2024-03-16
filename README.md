@@ -49,9 +49,11 @@ dependencies:
 
 ### Examples
 - [Arduino: Host](examples/arduino/host/Host.ino)
+- [Arduino: Host Driver](examples/arduino/host_driver/Host.ino)
 - [Arduino: Node](examples/arduino/node/Node.ino)
 - [ESP-IDF: Host](examples/espidf/host/main/main.cpp)
-- [ESP-IDF: Host](examples/espidf/node/main/main.cpp)
+- [ESP-IDF: Host Driver](examples/espidf/host_driver/main/main.cpp)
+- [ESP-IDF: Node](examples/espidf/node/main/main.cpp)
 
 ### Parition table (for the Node)
 You need to have two app partitions in your parition table to be able to swap between otas. This is an example:
@@ -73,6 +75,8 @@ To set partition table, save above in a file called `partitions_with_ota.csv`. F
 Newer version most probably work too, but they have not been verified.
 
 ### Dependencies
+- For Host Driver, _optional_: https://github.com/Johboh/MQTTRemote
+  - There is a copy of [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) in this library from [Johboh/MQTTRemote](https://github.com/Johboh/MQTTRemote). You can either add a dependency on [MQTTRemote](https://github.com/Johboh/MQTTRemote), or implement/adapt/forward to your own MQTT implementation. This library only depend on the [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) interface.
 - Needs C++17 for `std::optional`.
   - For platform I/O in `platformio.ini`:
     ```C++

@@ -36,11 +36,5 @@
       "files": ["main.cpp"]
     }
   ],
-  "dependencies": [
-    {
-      "owner": "johboh",
-      "name": "MQTTRemote",
-      "version": "^4.0.1"
-    }
-  ]
+  "dependencies": []
 }

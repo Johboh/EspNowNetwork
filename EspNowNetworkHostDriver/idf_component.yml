@@ -3,5 +3,3 @@ description: Library for setting up a network of ESP NOW nodes - Host Driver for
 url: https://github.com/Johboh/EspNowNetwork
 dependencies:
   idf: ">=4.4"
-  johboh/MQTTRemote:
-    version: ">=4.0.1"

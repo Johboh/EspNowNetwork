@@ -45,6 +45,6 @@ jobs:
         if: ${{ matrix.example.library != './library.json' }}
 
       - name: Build PlatformIO examples
-        run: pio ci --lib="." --board=lolin_c3_mini --project-option="build_unflags = -std=gnu++11" --project-option="build_flags = -std=gnu++17" --project-option="platform=espressif32@6.4.0" --project-option="lib_ldf_mode=deep"
+        run: pio ci --lib="." --board=lolin_c3_mini --project-option="build_unflags = -std=gnu++11" --project-option="lib_deps=johboh/MQTTRemote@^4.0.1" --project-option="build_flags = -std=gnu++17" --project-option="platform=espressif32@6.4.0" --project-option="lib_ldf_mode=deep"
         env:
           PLATFORMIO_CI_SRC: ${{ matrix.example.path }}
