@@ -55,11 +55,11 @@ String logLevelToString(const esp_log_level_t log_level) {
 }
 
 EspNowHost::OnLog _on_host_log = [](const std::string message, const esp_log_level_t log_level) {
-  Serial.println(("EspNowHost (" + logLevelToString(log_level) + "): " + message).c_str());
+  Serial.println("EspNowHost (" + logLevelToString(log_level) + "): " + String(message.c_str()));
 };
 
 EspNowNode::OnLog _on_node_log = [](const std::string message, const esp_log_level_t log_level) {
-  Serial.println(("EspNowNode (" + logLevelToString(log_level) + "): " + message).c_str());
+  Serial.println("EspNowNode (" + logLevelToString(log_level) + "): " + String(message.c_str()));
 };
 
 EspNowNode::OnStatus _on_status = [](EspNowNode::Status status) {};
