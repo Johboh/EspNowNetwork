@@ -1,4 +1,4 @@
-name: Push to PlatformIO registry
+name: Push EspNowNetworkHost to PlatformIO registry
 on:
   release:
     types: [created]
@@ -14,8 +14,14 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Remove esp IDF stuff
-        run: rm -rf host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver
+      - name: Move target
+        run: mv EspNowNetworkHost/library.json ./
+
+      - name: Remove esp IDF stuff and unused sources
+        run: rm -rf src/node host_driver examples/*/node examples/*/host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
+
+      - name: ESP IDF CMake stuff
+        run: rm -rf CMakeLists.txt idf_component.yml
 
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio

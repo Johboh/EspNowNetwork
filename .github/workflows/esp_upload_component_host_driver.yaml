@@ -15,17 +15,17 @@ jobs:
       - name: Remove full
         run: rm -rf CMakeLists.txt idf_component.yml LICENSE
 
-      - name: Move host driver
+      - name: Move target
         run: mv EspNowNetworkHostDriver/* ./
 
-      - name: Remove node and host and host driver idf folder
+      - name: Remove sub IDF folders
         run: rm -rf EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver
 
-      - name: Remove node code
-        run: rm -rf src/node
+      - name: Remove unused examples and sources
+        run: rm -rf src/node examples/espidf/node examples/espidf/host examples/arduino integration
 
-      - name: Remove arduino examples and library related files
-        run: rm -rf examples/arduino library.json library.properties
+      - name: Remove arduino
+        run: rm -rf library.json library.properties
 
       - name: Remove github actions
         run: rm -rf .github

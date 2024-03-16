@@ -1,0 +1,29 @@
+name: Push EspNowNetwork to PlatformIO registry
+on:
+  release:
+    types: [created]
+jobs:
+  build_examples_for_verification:
+    uses: ./.github/workflows/platformio.yaml
+  upload_library:
+    runs-on: ubuntu-latest
+    needs: [build_examples_for_verification]
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Remove esp IDF stuff and unused sources
+        run: rm -rf host_driver examples/*/host_driver EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver integration
+
+      - name: ESP IDF CMake stuff
+        run: rm -rf CMakeLists.txt idf_component.yml
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Publish PlatformIO library
+        run: pio pkg publish --owner johboh --no-notify --no-interactive
+        env:
+          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
