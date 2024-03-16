@@ -6,13 +6,15 @@ jobs:
     strategy:
       matrix:
         example:
-          - name: host
+          - path: examples/arduino/host
             library: EspNowNetworkHost/library.json
-          - name: node
+            remove: "src/node"
+          - path: examples/arduino/node
             library: EspNowNetworkNode/library.json
-          - name: host_driver
+            remove: "src/host"
+          - path: examples/arduino/host_driver
             library: EspNowNetworkHostDriver/library.json
-          - name: integration
+          - path: integration/arduino
             library: ./library.json
 
     steps:
@@ -29,10 +31,19 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-      - name: Move library to root
+      - name: Copy src for host driver to src directly if example is host_driver
+        run: mv host_driver ./src/
+        if: ${{ matrix.example.path == 'examples/arduino/host_driver' }}
+
+      - name: Remove files
+        run: rm -rf ${{ matrix.example.remove }}
+        if: ${{ matrix.example.remove }}
+
+      - name: Copy library.json to root (if not src is also in root)
         run: mv ${{ matrix.example.library }} ./
+        if: ${{ matrix.example.library != './library.json' }}
 
       - name: Build PlatformIO examples
         run: pio ci --lib="." --board=lolin_c3_mini --project-option="build_unflags = -std=gnu++11" --project-option="build_flags = -std=gnu++17" --project-option="platform=espressif32@6.4.0" --project-option="lib_ldf_mode=deep"
         env:
-          PLATFORMIO_CI_SRC: examples/arduino/${{ matrix.example.name }}
+          PLATFORMIO_CI_SRC: ${{ matrix.example.path }}
