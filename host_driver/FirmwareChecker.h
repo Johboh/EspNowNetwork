@@ -10,6 +10,8 @@
 #include <string>
 
 #define DEFAULT_CHECK_EACH_TYPE_EVERY_MS (30000L) // Check one type every 30s
+#define DEFAULT_STACK_SIZE (4096)
+#define DEFAULT_TASK_PRIORITY (10)
 
 /**
  * @brief Periodically fetch the latest available firmware version.
@@ -58,6 +60,29 @@ public:
     }
   };
 
+  struct Configuration {
+    /**
+     * @brief how often to check one type and hardware combination, in milliseconds.
+     */
+    unsigned long check_every_ms = DEFAULT_CHECK_EACH_TYPE_EVERY_MS;
+
+    /**
+     * @brief if set to non 0, will create task for driving the Device Manager. With this, there is no need to call the
+     * handle() function. Set to 0 to manually call the handle() in your own main loop.
+     */
+    unsigned long task_size = DEFAULT_STACK_SIZE;
+
+    /**
+     * @brief Priority for driving task. Only used if task_size is non zero.
+     *
+     */
+    uint8_t task_priority = DEFAULT_TASK_PRIORITY;
+  };
+
+  inline static Configuration _default = {.check_every_ms = DEFAULT_CHECK_EACH_TYPE_EVERY_MS,
+                                          .task_size = DEFAULT_STACK_SIZE,
+                                          .task_priority = DEFAULT_TASK_PRIORITY};
+
   /**
    * @brief Construct a new Firmware Checker object
    *
@@ -80,14 +105,19 @@ public:
    * Note! No support for HTTPS as of now.
    *
    * @param devices all available type and (optional) hardware combinations.
-   * @param check_every_ms how often to check one type and hardware combination, in milliseconds.
+   * @param configuration firmware checker specific configuration.
    */
-  FirmwareChecker(std::string base_url, const std::set<Device> &devices,
-                  unsigned long check_every_ms = DEFAULT_CHECK_EACH_TYPE_EVERY_MS);
+  FirmwareChecker(std::string base_url, const std::set<Device> &devices, Configuration configuration = _default);
 
 public:
   /**
-   * @brief Should be called from main loop
+   * @brief Must be called once an internet connection has been established.
+   */
+  void start();
+
+  /**
+   * @brief Call to drive the Firmware Checker. Only needed if task_size in configuration is set to 0. Otherwise, this
+   * is done by the Firmware Checker task.
    */
   void handle();
 
@@ -125,6 +155,8 @@ private:
    */
   void log(const std::string message, const esp_log_level_t log_level);
 
+  static void run_task(void *pvParams);
+
 private:
   struct Firmware {
     uint32_t version;
@@ -133,7 +165,7 @@ private:
 
   OnLog _on_log;
   std::string _base_url;
-  unsigned long _check_every_ms;
+  Configuration _configuration;
   OnAvailableFirmware _on_available_firmware;
   const std::set<Device> &_available_devices;
 

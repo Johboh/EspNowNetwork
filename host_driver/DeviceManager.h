@@ -11,6 +11,9 @@
 #include <string>
 #include <vector>
 
+#define DEFAULT_STACK_SIZE (4096)
+#define DEFAULT_TASK_PRIORITY (10)
+
 /**
  * @brief Called by host/router when a new message has been received over ESP-NOW.
  * This class check MAC address and forward the messages to respective specific implementation.
@@ -30,17 +33,40 @@ public:
 
   using IsConnected = std::function<bool(void)>;
 
+  struct Configuration {
+    /**
+     * @brief if set to non 0, will create task for driving the Device Manager. With this, there is no need to call the
+     * handle() function. Set to 0 to manually call the handle() in your own main loop.
+     */
+    unsigned long task_size = DEFAULT_STACK_SIZE;
+
+    /**
+     * @brief Priority for driving task. Only used if task_size is non zero.
+     *
+     */
+    uint8_t task_priority = DEFAULT_TASK_PRIORITY;
+  };
+
+  inline static Configuration _default = {.task_size = DEFAULT_STACK_SIZE, .task_priority = DEFAULT_TASK_PRIORITY};
+
   /**
    * @brief Construct a new Device Manager object
    *
    * @param devices the list of devices.
    * @param is_connected return if we are currently connected to MQTT.
    */
-  DeviceManager(std::vector<std::reference_wrapper<Device>> &devices, IsConnected is_connected);
+  DeviceManager(std::vector<std::reference_wrapper<Device>> &devices, IsConnected is_connected,
+                Configuration configuration = _default);
 
 public:
   /**
-   * @brief Should be called from main loop
+   * @brief Must be called once an internet connection has been established and ESP NOW has been setup.
+   */
+  void start();
+
+  /**
+   * @brief Call to drive the Device Manager. Only needed if task_size in configuration is set to 0. Otherwise, this
+   * is done by the Device Manager task.
    */
   void handle();
 
@@ -72,12 +98,15 @@ private:
    */
   void log(const std::string message, const esp_log_level_t log_level);
 
+  static void run_task(void *pvParams);
+
 private:
   bool _was_connected = false;
 
 private:
   OnLog _on_log;
   IsConnected _is_connected;
+  Configuration _configuration;
 
 private:
   std::map<uint64_t, unsigned long> _last_message_ms;

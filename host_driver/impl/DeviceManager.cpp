@@ -1,11 +1,28 @@
 #include "DeviceUtils.h"
 #include <DeviceManager.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
-DeviceManager::DeviceManager(std::vector<std::reference_wrapper<Device>> &devices, IsConnected is_connected)
-    : _is_connected(is_connected) {
+DeviceManager::DeviceManager(std::vector<std::reference_wrapper<Device>> &devices, IsConnected is_connected,
+                             Configuration configuration)
+    : _is_connected(is_connected), _configuration(configuration) {
   for (const auto &device_ref : devices) {
     auto &device = device_ref.get();
     _devices.insert({device.macAddress(), device});
+  }
+}
+
+void DeviceManager::run_task(void *pvParams) {
+  while (1) {
+    DeviceManager *_this = (DeviceManager *)pvParams;
+    _this->handle();
+    vTaskDelay(1 / portTICK_PERIOD_MS);
+  }
+}
+
+void DeviceManager::start() {
+  if (_configuration.task_size > 0) {
+    xTaskCreate(&run_task, "device_manager_task", _configuration.task_size, this, _configuration.task_priority, NULL);
   }
 }
 

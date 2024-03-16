@@ -4,12 +4,26 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-FirmwareChecker::FirmwareChecker(std::string base_url, const std::set<Device> &devices, unsigned long check_every_ms)
-    : _base_url(base_url), _check_every_ms(check_every_ms), _available_devices(devices) {}
+FirmwareChecker::FirmwareChecker(std::string base_url, const std::set<Device> &devices, Configuration configuration)
+    : _base_url(base_url), _configuration(configuration), _available_devices(devices) {}
+
+void FirmwareChecker::run_task(void *pvParams) {
+  while (1) {
+    FirmwareChecker *_this = (FirmwareChecker *)pvParams;
+    _this->handle();
+    vTaskDelay(1 / portTICK_PERIOD_MS);
+  }
+}
+
+void FirmwareChecker::start() {
+  if (_configuration.task_size > 0) {
+    xTaskCreate(&run_task, "firmware_checker_task", _configuration.task_size, this, _configuration.task_priority, NULL);
+  }
+}
 
 void FirmwareChecker::handle() {
   auto now = xTaskGetTickCount() * portTICK_PERIOD_MS;
-  if (now - _checked_device_last_at_ms > _check_every_ms) {
+  if (now - _checked_device_last_at_ms > _configuration.check_every_ms) {
 
     if (_available_devices.empty()) {
       log("No available types to check.", ESP_LOG_WARN);

@@ -85,7 +85,7 @@ HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encry
 
 // Prepare firmware checker
 std::set<FirmwareChecker::Device> _available_firmware_devices;
-FirmwareChecker _firmware_checker(firmware_update_base_url, _available_firmware_devices, 30000);
+FirmwareChecker _firmware_checker(firmware_update_base_url, _available_firmware_devices, {.check_every_ms = 30000});
 
 extern "C" {
 void app_main();
@@ -115,6 +115,10 @@ void app_main(void) {
 
     // Start host driver with FirmwareChecker
     _host_driver.setup(_firmware_checker);
+
+    // Start device manager and firmware checker
+    _device_manager.start();
+    _firmware_checker.start();
   } else {
     ESP_LOGE(TAG, "Failed to connect to WiFI");
   }
@@ -126,9 +130,6 @@ void app_main(void) {
   }
 
   while (1) {
-    _device_manager.handle();
-    _firmware_checker.handle();
-
     vTaskDelay(10 / portTICK_PERIOD_MS);
     fflush(stdout);
   }
