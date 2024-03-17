@@ -1,10 +1,10 @@
 #ifndef __IDEVICE_MANAGER_H__
 #define __IDEVICE_MANAGER_H__
 
-#include "esp_log.h"
 #include <Device.h>
 #include <IMQTTRemote.h>
 #include <cstdint>
+#include <esp_log.h>
 #include <map>
 #include <set>
 #include <string>
@@ -30,6 +30,21 @@ public:
    * return std::nullopt if no device was found.
    */
   virtual std::optional<std::reference_wrapper<Device>> deviceForMac(uint64_t mac_address) = 0;
+
+  /**
+   * @brief Callback when the device manager want to log something.
+   *
+   * @param message the log message to log.
+   * @param log_level the severity of the log.
+   */
+  using OnLog = std::function<void(const std::string message, const esp_log_level_t log_level)>;
+
+  /**
+   * @brief Called by the HostDriver to add a logger callback for the device manager. The host driver will
+   * use this to log messages on MQTT.
+   * If the device manager doesn't provide any logs, this can be omitted.
+   */
+  virtual void addOnLog(OnLog on_log) {}
 };
 
 #endif // __IDEVICE_MANAGER_H__

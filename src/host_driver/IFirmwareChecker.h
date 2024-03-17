@@ -2,6 +2,7 @@
 #define __IFIRMWARE_CHECKER_H__
 
 #include <cstdint>
+#include <esp_log.h>
 #include <functional>
 #include <optional>
 #include <string>
@@ -29,6 +30,42 @@ public:
    */
   virtual std::optional<UpdateInformation> getUpdateUrl(uint32_t version, std::string type,
                                                         std::optional<std::string> hardware) = 0;
+
+  /**
+   * @brief Callback when the firmware checker want to log something.
+   *
+   * @param message the log message to log.
+   * @param log_level the severity of the log.
+   */
+  using OnLog = std::function<void(const std::string message, const esp_log_level_t log_level)>;
+
+  /**
+   * @brief Called by the HostDriver to add a logger callback for the firmware checker. The host driver will
+   * use this to log messages on MQTT.
+   * If the firmware checker doesn't provide any logs, this can be omitted.
+   */
+  virtual void addOnLog(OnLog on_log) {}
+
+  /**
+   * @brief callback when a firmware version has been downloaded from the server.
+   * This indicates that there is a firmware available, not nessesary that it is the latest. The version has to be
+   * compared to the current version of the target node.
+   *
+   * @param device_type the device type.
+   * @param device_hardware the device hardware, optional.
+   * @param firmware_version the firmware version.
+   * @param firmware_md5 the firmware md5.
+   */
+  using OnAvailableFirmware =
+      std::function<void(const std::string device_type, const std::optional<std::string> device_hardware,
+                         const uint32_t firmware_version, const std::string firmware_md5)>;
+
+  /**
+   * @brief Called by the HostDriver to add a callback when a firmware version has been found on a server.
+   * The host driver will use this to log messages on MQTT on available firmware versions per type and hardware.
+   * Can be omitted.
+   */
+  virtual void addOnAvailableFirmware(OnAvailableFirmware on_available_firmware) {}
 };
 
 #endif // __IFIRMWARE_CHECKER_H__

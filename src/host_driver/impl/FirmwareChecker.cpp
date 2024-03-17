@@ -75,8 +75,10 @@ void FirmwareChecker::handle() {
 
     if (version && md5) {
       _firmware_version_for_device[device] = Firmware{version.value(), md5.value()};
-      if (_on_available_firmware) {
-        _on_available_firmware(device.type, device.hardware, version.value(), md5.value());
+      for (auto &on_available_firmware : _on_available_firmware) {
+        if (on_available_firmware) {
+          on_available_firmware(device.type, device.hardware, version.value(), md5.value());
+        }
       }
     } else {
       // On failure, clear.
@@ -103,7 +105,9 @@ std::optional<FirmwareChecker::UpdateInformation> FirmwareChecker::getUpdateUrl(
 }
 
 void FirmwareChecker::log(const std::string message, const esp_log_level_t log_level) {
-  if (_on_log) {
-    _on_log(message, log_level);
+  for (auto &on_log : _on_log) {
+    if (on_log) {
+      on_log(message, log_level);
+    }
   }
 }

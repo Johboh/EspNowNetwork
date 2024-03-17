@@ -65,21 +65,17 @@ public:
    */
   void setup(std::optional<std::reference_wrapper<IFirmwareChecker>> firmware_checker = std::nullopt);
 
-  // Attach as callback function to an optional FirmwareChecker
-  void onFirwmareLog(const std::string message, const esp_log_level_t log_level);
-  // Attach as callback function to an optional FirmwareChecker when there is an available firmware with a given
-  // version.
-  void onAvailableFirwmare(const std::string device_type, const std::optional<std::string> device_hardware,
-                           const uint32_t firmware_version, const std::string firmware_md5);
-  // Attach as callback function to a Device Manager.
-  void onDeviceManagerLog(const std::string message, const esp_log_level_t log_level);
-
 private:
   std::string logLevelToString(const esp_log_level_t log_level);
 
 private:
   void onNewMessage();
   void onHostLog(const std::string message, const esp_log_level_t log_level);
+  void onFirwmareLog(const std::string message, const esp_log_level_t log_level);
+  void onAvailableFirwmare(const std::string device_type, const std::optional<std::string> device_hardware,
+                           const uint32_t firmware_version, const std::string firmware_md5);
+  void onDeviceManagerLog(const std::string message, const esp_log_level_t log_level);
+
   std::optional<EspNowHost::FirmwareUpdate> onFirmwareUpdate(uint64_t mac_address, uint32_t firmware_version,
                                                              const char *wifi_ssid, const char *wifi_password);
   void onNewApplicationMessage(EspNowHost::MessageMetadata metadata, const uint8_t *message);

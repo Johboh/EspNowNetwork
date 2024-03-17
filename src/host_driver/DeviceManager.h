@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+using OnLog = IDeviceManager::OnLog;
+
 #define DEFAULT_STACK_SIZE (4096)
 #define DEFAULT_TASK_PRIORITY (10)
 
@@ -20,17 +22,6 @@
  */
 class DeviceManager : public IDeviceManager {
 public:
-  /**
-   * @brief Callback when the device manager want to log something.
-   *
-   * This doesn't need to be implemented. But can be used to print debug information to serial
-   * or post debug information to for example an MQTT topic.
-   *
-   * @param message the log message to log.
-   * @param log_level the severity of the log.
-   */
-  using OnLog = std::function<void(const std::string message, const esp_log_level_t log_level)>;
-
   using IsConnected = std::function<bool(void)>;
 
   struct Configuration {
@@ -70,12 +61,8 @@ public:
    */
   void handle();
 
-  /**
-   * @brief Set callback to use when the device manager want to log something.
-   * Only supports one callback. If a new callback is set, the old one will be overwritten.
-   * Set to {} to disable logging.
-   */
-  void setOnLog(OnLog on_log) { _on_log = on_log; }
+  // See IDeviceManager
+  void addOnLog(OnLog on_log) override { _on_log.push_back(on_log); }
 
   /**
    * @brief Forward a message to a device.
@@ -104,8 +91,8 @@ private:
   bool _was_connected = false;
 
 private:
-  OnLog _on_log;
   IsConnected _is_connected;
+  std::vector<OnLog> _on_log;
   Configuration _configuration;
 
 private:

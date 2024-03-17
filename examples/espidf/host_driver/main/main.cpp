@@ -93,11 +93,6 @@ void app_main();
 
 void app_main(void) {
 
-  // Forward logging callbacks.
-  _device_manager.setOnLog(std::bind(&HostDriver::onDeviceManagerLog, _host_driver, _1, _2));
-  _firmware_checker.setOnLog(std::bind(&HostDriver::onFirwmareLog, _host_driver, _1, _2));
-  _firmware_checker.setOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, _host_driver, _1, _2, _3, _4));
-
   // setup firmware devices
   for (const auto &device_ref : _devices) {
     auto &device = device_ref.get();

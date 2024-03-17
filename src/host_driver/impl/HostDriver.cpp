@@ -11,11 +11,18 @@ HostDriver::HostDriver(IDeviceManager &device_manager, const char *wifi_ssid, co
                     std::bind(&HostDriver::onNewApplicationMessage, this, _1, _2),
                     std::bind(&HostDriver::onFirmwareUpdate, this, _1, _2, wifi_ssid, wifi_password),
                     std::bind(&HostDriver::onHostLog, this, _1, _2)),
-      _device_manager(device_manager) {}
+      _device_manager(device_manager) {
+  _device_manager.addOnLog(std::bind(&HostDriver::onDeviceManagerLog, this, _1, _2));
+}
 
 void HostDriver::setup(std::optional<std::reference_wrapper<IFirmwareChecker>> firmware_checker) {
   _esp_now_host.setup();
   _firmware_checker = firmware_checker;
+  if (_firmware_checker) {
+    auto &firmware_checker = _firmware_checker.value().get();
+    firmware_checker.addOnLog(std::bind(&HostDriver::onFirwmareLog, this, _1, _2));
+    firmware_checker.addOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, this, _1, _2, _3, _4));
+  }
 }
 
 std::string HostDriver::logLevelToString(const esp_log_level_t log_level) {

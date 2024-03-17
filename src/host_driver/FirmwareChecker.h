@@ -8,6 +8,10 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
+
+using OnAvailableFirmware = IFirmwareChecker::OnAvailableFirmware;
+using OnLog = IFirmwareChecker::OnLog;
 
 #define DEFAULT_CHECK_EACH_TYPE_EVERY_MS (30000L) // Check one type every 30s
 #define DEFAULT_STACK_SIZE (4096)
@@ -17,30 +21,6 @@
  * @brief Periodically fetch the latest available firmware version.
  */
 class FirmwareChecker : public IFirmwareChecker {
-public:
-  /**
-   * @brief Callback when the firmware checker want to log something.
-   *
-   * This doesn't need to be implemented. But can be used to print debug information to serial
-   * or post debug information to for example an MQTT topic.
-   *
-   * @param message the log message to log.
-   * @param log_level the severity of the log.
-   */
-  using OnLog = std::function<void(const std::string message, const esp_log_level_t log_level)>;
-
-  /**
-   * @brief callback when a firmware version has been downloaded from the server.
-   *
-   * @param device_type the device type.
-   * @param device_hardware the device hardware, optional.
-   * @param firmware_version the firmware version.
-   * @param firmware_md5 the firmware md5.
-   */
-  using OnAvailableFirmware =
-      std::function<void(const std::string device_type, const std::optional<std::string> device_hardware,
-                         const uint32_t firmware_version, const std::string firmware_md5)>;
-
 public:
   struct Device {
     std::string type;
@@ -121,31 +101,15 @@ public:
    */
   void handle();
 
-  /**
-   * @brief Set callback to use when the firmware checker want to log something.
-   * Only supports one callback. If a new callback is set, the old one will be overwritten.
-   * Set to {} to disable logging.
-   */
-  void setOnLog(OnLog on_log = {}) { _on_log = on_log; }
+  // See IFirmwareChecker
+  void addOnLog(OnLog on_log) override { _on_log.push_back(on_log); }
 
-  /**
-   * @brief Set callback to use when a firmware version has been downloaded from the server.
-   * Only supports one callback. If a new callback is set, the old one will be overwritten.
-   * Set to {} to disable.
-   */
-  void setOnAvailableFirmware(OnAvailableFirmware on_available_firmware = {}) {
-    _on_available_firmware = on_available_firmware;
+  // See IFirmwareChecker
+  void addOnAvailableFirmware(OnAvailableFirmware on_available_firmware) override {
+    _on_available_firmware.push_back(on_available_firmware);
   }
 
-  /**
-   * @brief Given a firmare version, get the update URI and md5 to use to update this device to a newer version.
-   * Optional absent if there is no newer firmware available.
-   *
-   * @param version the current firmware version of the device.
-   * @param type the type to get firmware version for (one of devices())
-   * @param hardware the hardware to get firmware version for (one of devices())
-   * @return the firmware URL and md5 to use to update if there is a newer version available, else std::nullopt
-   */
+  // See IFirmwareChecker
   std::optional<IFirmwareChecker::UpdateInformation> getUpdateUrl(uint32_t version, std::string type,
                                                                   std::optional<std::string> hardware) override;
 
@@ -163,11 +127,11 @@ private:
     std::string md5;
   };
 
-  OnLog _on_log;
   std::string _base_url;
+  std::vector<OnLog> _on_log;
   Configuration _configuration;
-  OnAvailableFirmware _on_available_firmware;
   const std::set<Device> &_available_devices;
+  std::vector<OnAvailableFirmware> _on_available_firmware;
 
   unsigned long _checked_device_last_at_ms = 0;
   std::set<Device>::iterator _devices_iterator = _available_devices.end();

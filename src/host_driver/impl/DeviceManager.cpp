@@ -67,7 +67,9 @@ std::optional<std::reference_wrapper<Device>> DeviceManager::deviceForMac(uint64
 }
 
 void DeviceManager::log(const std::string message, const esp_log_level_t log_level) {
-  if (_on_log) {
-    _on_log(message, log_level);
+  for (auto &on_log : _on_log) {
+    if (on_log) {
+      on_log(message, log_level);
+    }
   }
 }
