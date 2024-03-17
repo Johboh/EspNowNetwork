@@ -1,7 +1,7 @@
 #include "EspNowOta.h"
-#include "esp-now-structs.h"
 #include <EspNowNode.h>
 #include <cstring>
+#include <esp-now-structs.h>
 #include <esp_random.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
@@ -73,7 +73,13 @@ void EspNowNode::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_inf
 EspNowNode::EspNowNode(EspNowCrypt &crypt, EspNowNetwork::Preferences &preferences, uint32_t firmware_version,
                        OnStatus on_status, OnLog on_log, CrtBundleAttach crt_bundle_attach)
     : _on_log(on_log), _on_status(on_status), _crypt(crypt), _firmware_version(firmware_version),
-      _crt_bundle_attach(crt_bundle_attach), _preferences(preferences) {}
+      _crt_bundle_attach(crt_bundle_attach), _preferences(preferences) {
+
+  _host_peer_info.ifidx = WIFI_IF_STA;
+  _host_peer_info.channel = 0;     // Channel 0 means "use the same channel as WiFi". We don't use WiFi, but ESP-NOW is
+                                   // using the MAC layer beneath.
+  _host_peer_info.encrypt = false; // Never use esp NOW encryption. We run our own encryption (see EspNowCryp.h)
+}
 
 bool EspNowNode::setup() {
   if (_setup_successful) {
@@ -100,8 +106,7 @@ bool EspNowNode::setup() {
   esp_err_t r = esp_now_init();
   if (r != ESP_OK) {
     log("Error initializing ESP-NOW:", r);
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
-    esp_restart();
+    return false;
   } else {
     log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
   }
@@ -121,19 +126,12 @@ bool EspNowNode::setup() {
 #endif
   log("Registering receive callback for esp now failed:", r);
 
-  esp_now_peer_info_t peer_info;
-  peer_info.ifidx = WIFI_IF_STA;
-  // Channel 0 means "use the same channel as WiFi". We don't use WiFi, but ESP-NOW is using the MAC layer beneath.
-  peer_info.channel = 0;
-  peer_info.encrypt = false; // Never use esp NOW encryption. We run our own encryption (see EspNowCryp.h)
-
   // If we have host MAC address, add that one as a peer.
   // Else, add broadcast address and announce our presence.
-  // If the mac we have stored is not valid, we will fail when sending messages,
-  // and will clear the MAC we have and restart, and thus end up here again.
+  // If the mac we have stored is not valid it will be cleared and the setup will be unsuccessful.
   // Same logic apply for the WiFi channel. We try to get it, but on failure we will go into discovery mode.
   auto channel_opt = _preferences.espNowGetChannelForHost();
-  bool presumably_valid_host_mac_address = _preferences.espNowGetMacForHost(_esp_now_host_address);
+  bool presumably_valid_host_mac_address = _preferences.espNowGetMacForHost(_host_peer_info.peer_addr);
   bool presumably_valid_configuration = presumably_valid_host_mac_address && isValidWiFiChannel(channel_opt);
 
   if (presumably_valid_configuration) {
@@ -150,24 +148,21 @@ bool EspNowNode::setup() {
 
   if (!presumably_valid_configuration) {
     log("No valid MAC address and/or WiFi channel. Going into discovery mode.", ESP_LOG_INFO);
-    std::memset(_esp_now_host_address, 0xFF, ESP_NOW_ETH_ALEN);
+    std::memset(_host_peer_info.peer_addr, 0xFF, ESP_NOW_ETH_ALEN);
   }
-  std::memcpy(peer_info.peer_addr, _esp_now_host_address, ESP_NOW_ETH_ALEN);
 
   // Delete any existing peer. Fail silently (e.g. if not exists)
-  esp_now_del_peer(peer_info.peer_addr);
+  esp_now_del_peer(_host_peer_info.peer_addr);
 
-  r = esp_now_add_peer(&peer_info);
+  r = esp_now_add_peer(&_host_peer_info);
   bool success = r == ESP_OK;
-  if (!success) {
-    log("Per adding failure:", r);
-  }
+  log("Peer adding failure:", r);
 
+  // If no valid configuration, we need to find the host MAC address as well as what WiFi channel we should use.
   if (!presumably_valid_configuration) {
     if (_on_status) {
       _on_status(Status::HOST_DISCOVERY_STARTED);
     }
-    // Ok so we have no valid host MAC address.
     // Announce our precence until we get a reply.
 
     uint8_t mac_addr[ESP_NOW_ETH_ALEN];
@@ -206,21 +201,40 @@ bool EspNowNode::setup() {
                          isValidWiFiChannel(response->channel);
 
         if (confirmed) {
-          log("Got valid disovery response. Restarting.", ESP_LOG_INFO);
+          log("Got valid disovery response.", ESP_LOG_INFO);
           _preferences.espNowSetMacForHost(mac_addr);
           _preferences.espNowSetChannelForHost(response->channel);
           _preferences.commit();
           if (_on_status) {
             _on_status(Status::HOST_DISCOVERY_SUCCESSFUL);
           }
-          esp_restart(); // Start over from the begining.
+          // All good. Try to set wifi channel and set MAC and indicate we have a sucessful setup.
+          auto r = esp_wifi_set_channel(response->channel, WIFI_SECOND_CHAN_NONE);
+          if (r != ESP_OK) {
+            // Failed to set channel. Could happen if this channel is not allowed in this country,
+            // see https://en.wikipedia.org/wiki/List_of_WLAN_channels
+            log("Failed to set WiFi channel " + std::to_string(response->channel) + " received from host:", r);
+            break; // Unrecoverable. Give up.
+          }
+
+          // Ok all good. Copy MAC into host peer and add peer.
+          std::memcpy(_host_peer_info.peer_addr, mac_addr, ESP_NOW_ETH_ALEN);
+          r = esp_now_add_peer(&_host_peer_info);
+          if (r != ESP_OK) {
+            log("Failed to add peer:", r);
+            break; // Unrecoverable. Give up.
+          }
+
+          _setup_successful = true;
+          return true;
         } else {
           log("Got invalid disovery response. Retrying.", ESP_LOG_WARN);
         }
       }
 
       // No message/timeout or failed to verify. Try again.
-    }
+    } // end of host discovery loop
+
     if (_on_status) {
       _on_status(Status::HOST_DISCOVERY_FAILED);
     }
@@ -229,7 +243,7 @@ bool EspNowNode::setup() {
     // So we never got a message after several retries.
     // Let caller now this.
     success = false;
-  }
+  } // end of non valid configuration
 
   if (!success) {
     teardown(); // Teardown so we can try again.
@@ -241,7 +255,7 @@ bool EspNowNode::setup() {
 
 void EspNowNode::teardown() {
   _setup_successful = false;
-  memset(_esp_now_host_address, 0x00, ESP_NOW_ETH_ALEN);
+  memset(_host_peer_info.peer_addr, 0x00, ESP_NOW_ETH_ALEN);
 
   esp_wifi_stop();
   if (_netif_sta != nullptr) {
@@ -266,6 +280,9 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
   request.challenge_challenge = esp_random();
   request.firmware_version = _firmware_version;
 
+  // Hold any firmware update we might want to do. Null if no firmware update.
+  std::unique_ptr<EspNowChallengeFirmwareResponseV1> firmware_update_response = nullptr;
+
   // First, we must request the challenge to use.
   bool got_challange = false;
   int8_t challenge_retries = NUMBER_OF_RETRIES_FOR_CHALLENGE_REQUEST;
@@ -276,6 +293,7 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
     auto decrypted_data = sendAndWait((uint8_t *)&request, sizeof(EspNowChallengeRequestV1));
     if (decrypted_data != nullptr) {
       auto id = decrypted_data.get()[0];
+
       switch (id) {
       case MESSAGE_ID_CHALLENGE_RESPONSE_V1: {
         log("Got challenge response.", ESP_LOG_INFO);
@@ -292,14 +310,19 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
         }
         break;
       }
+
       case MESSAGE_ID_CHALLENGE_FIRMWARE_RESPONSE_V1: {
         log("Got challenge update firmware response.", ESP_LOG_INFO);
         EspNowChallengeFirmwareResponseV1 *response = (EspNowChallengeFirmwareResponseV1 *)decrypted_data.get();
         // Validate the challenge for the challenge request/response pair
         if (response->challenge_challenge == request.challenge_challenge) {
-          // Hosts wants us to update firmware. Lets do it.
-          // handleFirmwareUpdate will never return.
-          handleFirmwareUpdate(response->wifi_ssid, response->wifi_password, response->url, response->md5);
+          // Hosts wants us to update firmware. Lets do it. But first send our message.
+          // We will update firmware after sending message.
+          header.header_challenge = response->header_challenge;
+          got_challange = true;
+          // Hand over ownership of decrypted_data to firmware_update_response
+          firmware_update_response = std::unique_ptr<EspNowChallengeFirmwareResponseV1>(
+              reinterpret_cast<EspNowChallengeFirmwareResponseV1 *>(decrypted_data.release()));
         } else {
           log("Challenge mismatch for challenge request/ firmware response (expected: " +
                   std::to_string(request.challenge_challenge) +
@@ -308,13 +331,14 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
         }
         break;
       }
-      }
+
+      } // end of switch(id).
     }
-  }
+  } // end of discovery loop
 
   if (!got_challange) {
-    log("Failed to receive challenge response. Assuming invalid host MAC address. Clearing stored MAC address and "
-        "restarting.",
+    log("Failed to receive challenge response. Assuming invalid host MAC address and/or WiFi channel. Clearing stored "
+        "MAC address and WiFi channel. Node need to call setup() again to re-discover host.",
         ESP_LOG_ERROR);
     // Sad times. We have no challenge. No point in continuing.
     // Assume host is broken.
@@ -322,8 +346,8 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
     if (_on_status) {
       _on_status(Status::INVALID_HOST);
     }
-    esp_restart();
-    return false; // Unreachable, but just in case.
+    teardown(); //  We need to setup again.
+    return false;
   }
 
   uint32_t size = sizeof(EspNowMessageHeaderV1) + message_size;
@@ -365,6 +389,14 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
     }
   }
 
+  // Regardless of outcome and we should update firmware, try to do that now.
+  if (firmware_update_response != nullptr) {
+    // Hosts wants us to update firmware. Lets do it.
+    // handleFirmwareUpdate will never return.
+    auto metadata = firmware_update_response.get();
+    handleFirmwareUpdate(metadata->wifi_ssid, metadata->wifi_password, metadata->url, metadata->md5);
+  }
+
   if (!success && attempt >= retries) {
     // Failed to get ACK on message. We have a valid host as we got challenge response above.
     log("Failed to send message after retries.", ESP_LOG_ERROR);
@@ -377,12 +409,11 @@ bool EspNowNode::sendMessage(void *message, size_t message_size, int16_t retries
 void EspNowNode::forgetHost() {
   _preferences.eraseAll();
   _preferences.commit();
-  memset(_esp_now_host_address, 0x00, ESP_NOW_ETH_ALEN);
-  _setup_successful = false;
+  memset(_host_peer_info.peer_addr, 0x00, ESP_NOW_ETH_ALEN);
 }
 
 void EspNowNode::sendMessageInternal(uint8_t *buff, size_t length) {
-  esp_err_t r = _crypt.sendMessage(_esp_now_host_address, buff, length);
+  esp_err_t r = _crypt.sendMessage(_host_peer_info.peer_addr, buff, length);
   if (r != ESP_OK) {
     log("_crypt.sendMessage() failure:", r);
   } else {

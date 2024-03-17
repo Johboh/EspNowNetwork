@@ -42,26 +42,24 @@ public:
 
   enum class Status {
     /**
-     * @brief We don't know about the MAC host address, so starting the disovery process to find the host MAC.
+     * @brief We don't know about the MAC host address and/or WiFi chanel, so starting the disovery process to find the
+     * host MAC/WiFi channel.
      */
     HOST_DISCOVERY_STARTED,
 
     /**
-     * @brief The host MAC was found. The device will be restarted (using esp_restart()).
-     * TODO(johboh): Consider making the restart optional?
+     * @brief The host MAC and WiFi channel was found.
      */
     HOST_DISCOVERY_SUCCESSFUL,
 
     /**
-     * @brief Unable to find the host MAC. This is most probably due to the host being offline.
+     * @brief Unable to find the host MAC and/or WiFi channel. This is most probably due to the host being offline.
      */
     HOST_DISCOVERY_FAILED,
 
     /**
      * @brief Host failed to acknowledge messages when trying to send a message. The persisted host is most probably
-     * invalid. The host has now been forgotten, and a new setup is needed. The device will be restarted (using
-     * esp_restart()).
-     * TODO(johboh): Consider making the restart optional?
+     * invalid. The host has now been forgotten, and a new setup is needed.
      */
     INVALID_HOST,
 
@@ -128,15 +126,18 @@ public:
   /**
    * @brief Setup the ESP-NOW stack
    *
-   * If there is already a known host (MAC address) stored in Preferences/Flash, this MAC address will be used
-   * in the sendMessage() call.
-   * If there is no stored MAC address, a discovery will start.
-   * After the ESP-NOW is setup, a broadcast disovery request message is sent. A EspNowHost device will reply to this.
-   * Upon reply, the MAC address will be persisted to Preferences/Flash, and the device will reboot.
-   * If there is no valid reply (after a certain number of retries to discover a host), this method will return false.
+   * If there is already a known host (MAC address) and Wifi channel stored in Preferences/Flash, this MAC address and
+   * channel will be used in the sendMessage() call. If there is no stored MAC address or valid WiFi channel, a
+   * discovery will start. After the ESP-NOW is setup, a broadcast disovery request message is sent. A EspNowHost device
+   * will reply to this. Upon reply, the MAC address and WiFi channel will be persisted to Preferences/Flash. If there
+   * is no valid reply (after a certain number of retries to discover a host), this method will return false.
    *
    * Note that as ESP-NOW depend on WiFi, the EspNowNode will not work togheter with WiFi. It assumes no WiFi is
    * previosly setup or will be setup. A node is supposed to use Esp-NOW only as means of communication.
+   *
+   * Must be called before fist call to sendMessage().
+   *
+   * @return true on sucessful setup, or false if failed to setup ESP-NOW or failed to do discovery.
    */
   bool setup();
 
@@ -217,8 +218,8 @@ private:
   uint32_t _firmware_version;
   bool _setup_successful = false;
   CrtBundleAttach _crt_bundle_attach;
+  esp_now_peer_info_t _host_peer_info;
   EspNowNetwork::Preferences &_preferences;
-  uint8_t _esp_now_host_address[ESP_NOW_ETH_ALEN];
 };
 
 #endif // __ESP_NOW_NODE_H__

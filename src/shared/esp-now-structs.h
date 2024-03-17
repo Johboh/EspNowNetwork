@@ -12,6 +12,8 @@
 #define MESSAGE_ID_CHALLENGE_RESPONSE_V1 0xDB
 #define MESSAGE_ID_CHALLENGE_FIRMWARE_RESPONSE_V1 0xDC
 
+// Handle all structures like protobuf, e.g. cannot remove fields and new fields should be added last.
+
 #pragma pack(1)
 
 /**
@@ -73,6 +75,7 @@ struct EspNowChallengeFirmwareResponseV1 {
   char wifi_password[32];       // WiFi password that the node should connect to.
   char url[96];                 // url where to find firmware binary. Note the max file path.
   char md5[32];                 // MD5 hash of firmware. Does not include trailing \0
+  uint32_t header_challenge;    // Should be set in [EspNowMessageHeaderV1].
 };
 
 #pragma pack(0)
