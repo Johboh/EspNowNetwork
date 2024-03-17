@@ -15,6 +15,7 @@
 #include <freertos/task.h>
 #include <lwip/err.h>
 #include <lwip/sys.h>
+#include <memory>
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
 #include <spi_flash_mmap.h>
 #endif
@@ -167,7 +168,12 @@ esp_err_t EspNowOta::httpEventHandler(esp_http_client_event_t *evt) {
 
 bool EspNowOta::downloadAndWriteToPartition(const esp_partition_t *partition, std::string &url, std::string &md5hash) {
 
-  char *buffer = (char *)malloc(SPI_FLASH_SEC_SIZE);
+  std::unique_ptr<char[]> buffer(new (std::nothrow) char[SPI_FLASH_SEC_SIZE]);
+  if (buffer == nullptr) {
+    log("Unable to allocate buffer in downloadAndWriteToPartition() with size " + std::to_string(SPI_FLASH_SEC_SIZE),
+        ESP_LOG_ERROR);
+    return false;
+  }
 
   esp_http_client_config_t config = {};
   config.url = url.c_str();
@@ -216,9 +222,6 @@ bool EspNowOta::downloadAndWriteToPartition(const esp_partition_t *partition, st
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
 
-  if (buffer != nullptr) {
-    free(buffer);
-  }
   return success;
 }
 
@@ -241,9 +244,10 @@ int EspNowOta::fillBuffer(esp_http_client_handle_t client, char *buffer, size_t 
 
 bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_http_client_handle_t client,
                                        uint32_t content_length, std::string &md5hash) {
-  char *buffer = (char *)malloc(SPI_FLASH_SEC_SIZE);
+  std::unique_ptr<char[]> buffer(new (std::nothrow) char[SPI_FLASH_SEC_SIZE]);
   if (buffer == nullptr) {
-    log("Failed to allocate buffer of size " + std::to_string(SPI_FLASH_SEC_SIZE), ESP_LOG_ERROR);
+    log("Failed to allocate buffer in writeStreamToPartition() with size " + std::to_string(SPI_FLASH_SEC_SIZE),
+        ESP_LOG_ERROR);
     return false;
   }
 
@@ -254,10 +258,9 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
 
   int bytes_read = 0;
   while (bytes_read < content_length) {
-    int bytes_filled = fillBuffer(client, buffer, SPI_FLASH_SEC_SIZE);
+    int bytes_filled = fillBuffer(client, buffer.get(), SPI_FLASH_SEC_SIZE);
     if (bytes_filled < 0) {
       log("Unable to fill buffer", ESP_LOG_ERROR);
-      free(buffer);
       return false;
     }
 
@@ -269,25 +272,23 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
     if (bytes_read == 0) {
       if (buffer[0] != ESP_IMAGE_HEADER_MAGIC) {
         log("Start of firwmare does not contain magic byte", ESP_LOG_ERROR);
-        free(buffer);
         return false;
       }
 
       // Stash the first 16/ENCRYPTED_BLOCK_SIZE bytes of data and set the offset so they are
       // not written at this point so that partially written firmware
       // will not be bootable
-      memcpy(skip_buffer, buffer, sizeof(skip_buffer));
+      memcpy(skip_buffer, buffer.get(), sizeof(skip_buffer));
       skip += sizeof(skip_buffer);
     }
 
     // Normal case - write buffer
-    if (!writeBufferToPartition(partition, bytes_read, buffer, bytes_filled, skip)) {
+    if (!writeBufferToPartition(partition, bytes_read, buffer.get(), bytes_filled, skip)) {
       log("Failed to write buffer to partition", ESP_LOG_ERROR);
-      free(buffer);
       return false;
     }
 
-    md5.add((uint8_t *)buffer, (uint16_t)bytes_filled);
+    md5.add((uint8_t *)buffer.get(), (uint16_t)bytes_filled);
     bytes_read += bytes_filled;
 
     // If this is the end, finish up.
@@ -298,7 +299,6 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
         md5.calculate();
         if (md5hash != md5.toString()) {
           log("MD5 checksum verification failed.", ESP_LOG_ERROR);
-          free(buffer);
           return false;
         } else {
           log("MD5 checksum correct.", ESP_LOG_INFO);
@@ -308,20 +308,17 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
       auto r = esp_partition_write(partition, 0, (uint32_t *)skip_buffer, ENCRYPTED_BLOCK_SIZE);
       if (r != ESP_OK) {
         log("Failed to enable partition", r);
-        free(buffer);
         return false;
       }
 
       r = partitionIsBootable(partition);
       if (r != ESP_OK) {
         log("Partition is not bootable", r);
-        free(buffer);
         return false;
       }
 
       r = esp_ota_set_boot_partition(partition);
       if (r != ESP_OK) {
-        free(buffer);
         log("Failed to set partition as bootable", r);
         return false;
       }
@@ -330,7 +327,6 @@ bool EspNowOta::writeStreamToPartition(const esp_partition_t *partition, esp_htt
     vTaskDelay(0); // Yield/reschedule
   }
 
-  free(buffer);
   return true;
 }
 
