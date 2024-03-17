@@ -257,7 +257,7 @@ void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, si
   peer_info.ifidx = _wifi_interface == WiFiInterface::AP ? WIFI_IF_AP : WIFI_IF_STA;
   // Channel 0 means "use the current channel which station or softap is on".
   peer_info.channel = 0;
-  peer_info.encrypt = false; // Never use esp NOW encryption.
+  peer_info.encrypt = false; // Never use esp NOW encryption. We run our own encryption (see EspNowCryp.h)
   std::memcpy(peer_info.peer_addr, mac_addr, ESP_NOW_ETH_ALEN);
 
   esp_err_t r = esp_now_add_peer(&peer_info);

@@ -125,7 +125,7 @@ bool EspNowNode::setup() {
   peer_info.ifidx = WIFI_IF_STA;
   // Channel 0 means "use the same channel as WiFi". We don't use WiFi, but ESP-NOW is using the MAC layer beneath.
   peer_info.channel = 0;
-  peer_info.encrypt = false; // Never use esp NOW encryption.
+  peer_info.encrypt = false; // Never use esp NOW encryption. We run our own encryption (see EspNowCryp.h)
 
   // If we have host MAC address, add that one as a peer.
   // Else, add broadcast address and announce our presence.
