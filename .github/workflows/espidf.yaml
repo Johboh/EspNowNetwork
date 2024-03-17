@@ -1,8 +1,13 @@
 name: ESP-IDF CI
-on: [workflow_call, push]
+
+on:
+  workflow_call:
+  push:
+
 jobs:
   esp_idf_build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         version:
@@ -22,8 +27,7 @@ jobs:
           - name: integration/espidf
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4.1.1
 
       - name: ESP-IDF Build
         uses: espressif/esp-idf-ci-action@v1
