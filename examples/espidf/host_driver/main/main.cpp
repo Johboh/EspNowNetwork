@@ -73,9 +73,12 @@ DeviceFootPedal _device_foot_pedal_right(_mqtt_remote, 0x543204016bfc, "Right", 
   }
 });
 
-// Register devices in the DeviceManager
+// List all devices.
 std::vector<std::reference_wrapper<Device>> _devices{_device_foot_pedal_left, _device_foot_pedal_right};
+
+// Create Device Manager and Firmware Checker and register devices.
 DeviceManager _device_manager(_devices, []() { return _mqtt_remote.connected(); });
+FirmwareChecker _firmware_checker(firmware_update_base_url, _devices, {.check_every_ms = 30000});
 
 // Setup host driver.
 HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encryption_key, esp_now_encryption_secret,
@@ -83,21 +86,11 @@ HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encry
                           _mqtt_remote.publishMessage(_mqtt_remote.clientId() + sub_path, message, retain);
                         });
 
-// Prepare firmware checker
-std::set<FirmwareChecker::Device> _available_firmware_devices;
-FirmwareChecker _firmware_checker(firmware_update_base_url, _available_firmware_devices, {.check_every_ms = 30000});
-
 extern "C" {
 void app_main();
 }
 
 void app_main(void) {
-
-  // setup firmware devices
-  for (const auto &device_ref : _devices) {
-    auto &device = device_ref.get();
-    _available_firmware_devices.emplace(FirmwareChecker::Device{device.type(), device.hardware()});
-  }
 
   // Connect to WIFI
   auto connected = _wifi_helper.connectToAp(wifi_ssid, wifi_password, true, 10000);

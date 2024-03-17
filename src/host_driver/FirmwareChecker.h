@@ -1,6 +1,7 @@
 #ifndef __FIRMWARE_CHECKER_H__
 #define __FIRMWARE_CHECKER_H__
 
+#include "Device.h"
 #include "IFirmwareChecker.h"
 #include "esp_log.h"
 #include <cstdint>
@@ -24,12 +25,12 @@ const uint32_t DEFAULT_TASK_PRIORITY = 7;
  */
 class FirmwareChecker : public IFirmwareChecker {
 public:
-  struct Device {
+  struct FirmwareDevice {
     std::string type;
     std::optional<std::string> hardware;
 
-    bool operator==(const Device &other) const { return type == other.type && hardware == other.hardware; }
-    bool operator<(const Device &other) const {
+    bool operator==(const FirmwareDevice &other) const { return type == other.type && hardware == other.hardware; }
+    bool operator<(const FirmwareDevice &other) const {
       if (hardware.has_value() && other.hardware.has_value()) {
         return type + hardware.value() < other.type + other.hardware.value();
       } else if (hardware.has_value()) {
@@ -75,7 +76,8 @@ public:
    * @param devices all available type and (optional) hardware combinations.
    * @param configuration firmware checker specific configuration.
    */
-  FirmwareChecker(std::string base_url, const std::set<Device> &devices, Configuration configuration = _default);
+  FirmwareChecker(std::string base_url, const std::vector<std::reference_wrapper<Device>> &devices,
+                  Configuration configuration = _default);
 
 public:
   /**
@@ -121,12 +123,12 @@ private:
   std::string _base_url;
   std::vector<OnLog> _on_log;
   Configuration _configuration;
-  const std::set<Device> &_available_devices;
+  std::set<FirmwareDevice> _available_devices;
   std::vector<OnAvailableFirmware> _on_available_firmware;
 
   unsigned long _checked_device_last_at_ms = 0;
-  std::set<Device>::iterator _devices_iterator = _available_devices.end();
-  std::map<Device, Firmware> _firmware_version_for_device;
+  std::set<FirmwareDevice>::iterator _devices_iterator = _available_devices.end();
+  std::map<FirmwareDevice, Firmware> _firmware_version_for_device;
 };
 
 #endif // __FIRMWARE_CHECKER_H__

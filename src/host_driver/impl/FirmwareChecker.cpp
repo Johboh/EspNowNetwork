@@ -4,8 +4,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-FirmwareChecker::FirmwareChecker(std::string base_url, const std::set<Device> &devices, Configuration configuration)
-    : _base_url(base_url), _configuration(configuration), _available_devices(devices) {}
+FirmwareChecker::FirmwareChecker(std::string base_url, const std::vector<std::reference_wrapper<Device>> &devices,
+                                 Configuration configuration)
+    : _base_url(base_url), _configuration(configuration) {
+  for (const auto &device_ref : devices) {
+    auto &device = device_ref.get();
+    _available_devices.emplace(FirmwareDevice{device.type(), device.hardware()});
+  }
+}
 
 void FirmwareChecker::run_task(void *pvParams) {
   while (1) {
@@ -93,7 +99,7 @@ void FirmwareChecker::checkFirmware() {
 
 std::optional<FirmwareChecker::UpdateInformation> FirmwareChecker::getUpdateUrl(uint32_t version, std::string type,
                                                                                 std::optional<std::string> hardware) {
-  auto rlst = _firmware_version_for_device.find(Device{type, hardware});
+  auto rlst = _firmware_version_for_device.find(FirmwareDevice{type, hardware});
   if (rlst != _firmware_version_for_device.end()) {
     auto available_firmware_version = rlst->second.version;
     if (available_firmware_version > version) {
