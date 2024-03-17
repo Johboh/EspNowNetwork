@@ -5,6 +5,9 @@ on:
 jobs:
   build_examples_for_verification:
     uses: ./.github/workflows/platformio.yaml
+    with:
+      target_path: "examples/arduino/host_driver"
+
   upload_library:
     runs-on: ubuntu-latest
     needs: [build_examples_for_verification]

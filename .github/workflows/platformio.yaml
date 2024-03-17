@@ -2,6 +2,11 @@ name: PlatformIO CI
 
 on:
   workflow_call:
+    inputs:
+      target_path:
+        type: string
+        description: 'Path value to select a specific target in the matrix'
+        required: true
   push:
 
 jobs:
@@ -29,6 +34,9 @@ jobs:
             extra_dependencies: ""
 
     steps:
+      - if: github.event_name == 'workflow_call' && matrix.target.path != inputs.target_path
+        run: exit 0
+
       - uses: actions/checkout@v4.1.1
 
       - uses: actions/cache@v3
