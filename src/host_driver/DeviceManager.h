@@ -13,8 +13,10 @@
 
 using OnLog = IDeviceManager::OnLog;
 
-#define DEFAULT_STACK_SIZE (4096)
-#define DEFAULT_TASK_PRIORITY (10)
+namespace DeviceManagerDefaults {
+const uint32_t DEFAULT_STACK_SIZE = 4096;
+const uint32_t DEFAULT_TASK_PRIORITY = 7;
+} // namespace DeviceManagerDefaults
 
 /**
  * @brief Called by host/router when a new message has been received over ESP-NOW.
@@ -24,40 +26,24 @@ class DeviceManager : public IDeviceManager {
 public:
   using IsConnected = std::function<bool(void)>;
 
-  struct Configuration {
-    /**
-     * @brief if set to non 0, will create task for driving the Device Manager. With this, there is no need to call the
-     * handle() function. Set to 0 to manually call the handle() in your own main loop.
-     */
-    unsigned long task_size = DEFAULT_STACK_SIZE;
-
-    /**
-     * @brief Priority for driving task. Only used if task_size is non zero.
-     *
-     */
-    uint8_t task_priority = DEFAULT_TASK_PRIORITY;
-  };
-
-  inline static Configuration _default = {.task_size = DEFAULT_STACK_SIZE, .task_priority = DEFAULT_TASK_PRIORITY};
-
   /**
    * @brief Construct a new Device Manager object
    *
    * @param devices the list of devices.
    * @param is_connected return if we are currently connected to MQTT.
    */
-  DeviceManager(std::vector<std::reference_wrapper<Device>> &devices, IsConnected is_connected,
-                Configuration configuration = _default);
+  DeviceManager(std::vector<std::reference_wrapper<Device>> &devices, IsConnected is_connected);
 
 public:
   /**
-   * @brief Must be called once an internet connection has been established and ESP NOW has been setup.
+   * @brief Start a task that will drive the Device Manager. By calling this function, there is no
+   * need to manually call the handle() function.
    */
-  void start();
+  void startTask(unsigned long task_size = DeviceManagerDefaults::DEFAULT_STACK_SIZE,
+                 uint8_t task_priority = DeviceManagerDefaults::DEFAULT_TASK_PRIORITY);
 
   /**
-   * @brief Call to drive the Device Manager. Only needed if task_size in configuration is set to 0. Otherwise, this
-   * is done by the Device Manager task.
+   * @brief Manually drive the Device Manager. Must be called perodically if startTask() was not called.
    */
   void handle();
 
@@ -93,7 +79,6 @@ private:
 private:
   IsConnected _is_connected;
   std::vector<OnLog> _on_log;
-  Configuration _configuration;
 
 private:
   std::map<uint64_t, unsigned long> _last_message_ms;

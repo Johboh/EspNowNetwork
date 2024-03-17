@@ -77,8 +77,7 @@ HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encry
 
 // Prepare firmware checker
 std::set<FirmwareChecker::Device> _available_firmware_devices;
-FirmwareChecker _firmware_checker(firmware_update_base_url, _available_firmware_devices,
-                                  {.check_every_ms = 30000, .task_size = 0});
+FirmwareChecker _firmware_checker(firmware_update_base_url, _available_firmware_devices, {.check_every_ms = 30000});
 
 void setup() {
   Serial.begin(115200);

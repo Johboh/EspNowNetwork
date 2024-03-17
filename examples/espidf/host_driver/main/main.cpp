@@ -117,9 +117,9 @@ void app_main(void) {
     // Start host driver with FirmwareChecker
     _host_driver.setup(_firmware_checker);
 
-    // Start device manager and firmware checker
-    _device_manager.start();
-    _firmware_checker.start();
+    // Start task for the device manager and firmware checker
+    _device_manager.startTask();
+    _firmware_checker.startTask();
   } else {
     ESP_LOGE(TAG, "Failed to connect to WiFI");
   }

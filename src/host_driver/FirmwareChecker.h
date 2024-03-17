@@ -13,9 +13,11 @@
 using OnAvailableFirmware = IFirmwareChecker::OnAvailableFirmware;
 using OnLog = IFirmwareChecker::OnLog;
 
-#define DEFAULT_CHECK_EACH_TYPE_EVERY_MS (30000L) // Check one type every 30s
-#define DEFAULT_STACK_SIZE (4096)
-#define DEFAULT_TASK_PRIORITY (10)
+namespace FirmwareCheckerDefaults {
+const uint32_t DEFAULT_CHECK_EACH_TYPE_EVERY_MS = 30000L; // Check one type every 30s
+const uint32_t DEFAULT_STACK_SIZE = 4096;
+const uint32_t DEFAULT_TASK_PRIORITY = 7;
+} // namespace FirmwareCheckerDefaults
 
 /**
  * @brief Periodically fetch the latest available firmware version.
@@ -44,24 +46,10 @@ public:
     /**
      * @brief how often to check one type and hardware combination, in milliseconds.
      */
-    unsigned long check_every_ms = DEFAULT_CHECK_EACH_TYPE_EVERY_MS;
-
-    /**
-     * @brief if set to non 0, will create task for driving the Device Manager. With this, there is no need to call the
-     * handle() function. Set to 0 to manually call the handle() in your own main loop.
-     */
-    unsigned long task_size = DEFAULT_STACK_SIZE;
-
-    /**
-     * @brief Priority for driving task. Only used if task_size is non zero.
-     *
-     */
-    uint8_t task_priority = DEFAULT_TASK_PRIORITY;
+    unsigned long check_every_ms = FirmwareCheckerDefaults::DEFAULT_CHECK_EACH_TYPE_EVERY_MS;
   };
 
-  inline static Configuration _default = {.check_every_ms = DEFAULT_CHECK_EACH_TYPE_EVERY_MS,
-                                          .task_size = DEFAULT_STACK_SIZE,
-                                          .task_priority = DEFAULT_TASK_PRIORITY};
+  inline static Configuration _default = {.check_every_ms = FirmwareCheckerDefaults::DEFAULT_CHECK_EACH_TYPE_EVERY_MS};
 
   /**
    * @brief Construct a new Firmware Checker object
@@ -91,13 +79,14 @@ public:
 
 public:
   /**
-   * @brief Must be called once an internet connection has been established.
+   * @brief Start a task that will drive the Firmware Checker. By calling this function, there is no
+   * need to manually call the handle() function.
    */
-  void start();
+  void startTask(unsigned long task_size = FirmwareCheckerDefaults::DEFAULT_STACK_SIZE,
+                 uint8_t task_priority = FirmwareCheckerDefaults::DEFAULT_TASK_PRIORITY);
 
   /**
-   * @brief Call to drive the Firmware Checker. Only needed if task_size in configuration is set to 0. Otherwise, this
-   * is done by the Firmware Checker task.
+   * @brief Manually drive the Firmware Checker. Must be called perodically if startTask() was not called.
    */
   void handle();
 
@@ -120,6 +109,8 @@ private:
   void log(const std::string message, const esp_log_level_t log_level);
 
   static void run_task(void *pvParams);
+
+  void checkFirmware();
 
 private:
   struct Firmware {
