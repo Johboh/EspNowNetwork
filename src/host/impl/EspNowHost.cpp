@@ -213,12 +213,29 @@ void EspNowHost::handleDiscoveryRequest(uint8_t *mac_addr, uint32_t discovery_ch
 void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_challenge, uint32_t firmware_version) {
   uint64_t mac_address = macToMac(mac_addr);
 
+  // Not sure how we want to do it here. For now, if we already have a challenge, don't generate a new one.
+  // We always remove a challenge once it has been used, or on challenge verification failure.
+  // We re-use any not yet challanged challange if the node get same challange back in case
+  // they send several challange requests in a row (i.e. miss the first reply).
+  // This is to prevent any potential out of sync issues.
+  uint32_t header_challenge;
+  auto challenge = _challenges.find(mac_address);
+  if (challenge != _challenges.end()) {
+    // Existing one, reuse.
+    header_challenge = challenge->second;
+  } else {
+    // No existing one, create new one.
+    header_challenge = esp_random();
+    _challenges[mac_address] = header_challenge;
+  }
+
   // Any firmware to update?
   if (_firwmare_update) {
     auto metadata = _firwmare_update(mac_address, firmware_version);
     if (metadata) {
       log("Sending firmware update response to 0x" + toHex(mac_address), ESP_LOG_INFO);
       EspNowChallengeFirmwareResponseV1 message;
+      message.header_challenge = header_challenge;
       message.challenge_challenge = challenge_challenge;
       strncpy(message.wifi_ssid, metadata->wifi_ssid, sizeof(message.wifi_ssid));
       strncpy(message.wifi_password, metadata->wifi_password, sizeof(message.wifi_password));
@@ -231,21 +248,8 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
 
   // No firmware update (early return above)
   EspNowChallengeResponseV1 message;
+  message.header_challenge = header_challenge;
   message.challenge_challenge = challenge_challenge;
-  // Not sure how we want to do it here. For now, if we already have a challenge, don't generate a new one.
-  // We always remove a challenge once it has been used, or o challenge verification failure.
-  // We re-use any not yet challanged challange in so the node get same challange back in case
-  // they send several challange requests in a row (i.e. miss the first reply).
-  // This is to provent any potential out of sync issues.
-  auto challenge = _challenges.find(mac_address);
-  if (challenge != _challenges.end()) {
-    // Existing one, reuse.
-    message.header_challenge = challenge->second;
-  } else {
-    // No existing one, create new one.
-    message.header_challenge = esp_random();
-    _challenges[mac_address] = message.header_challenge;
-  }
   log("Sending challenge response to 0x" + toHex(mac_address) + " with challenge " +
           std::to_string(message.header_challenge),
       ESP_LOG_INFO);
