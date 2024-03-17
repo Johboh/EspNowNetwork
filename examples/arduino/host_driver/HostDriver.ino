@@ -67,7 +67,7 @@ DeviceFootPedal _device_foot_pedal_right(_mqtt_remote, 0x543204016bfc, "Right", 
 
 // Register devices in the DeviceManager
 std::vector<std::reference_wrapper<Device>> _devices{_device_foot_pedal_left, _device_foot_pedal_right};
-DeviceManager _device_manager(_devices, []() { return _mqtt_remote.connected(); }, {.task_size = 0});
+DeviceManager _device_manager(_devices, []() { return _mqtt_remote.connected(); });
 
 // Setup host driver.
 HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encryption_key, esp_now_encryption_secret,
