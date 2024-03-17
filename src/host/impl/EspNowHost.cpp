@@ -129,8 +129,8 @@ bool EspNowHost::start() {
   auto ok = r == ESP_OK;
 
   if (ok) {
-    xTaskCreate(newMessageTask, "new_message_task", 4096, this, 5, NULL);
-    xTaskCreate(messageDeliveredTask, "message_delivered_task", 4096, this, 10, NULL);
+    xTaskCreate(newMessageTask, "new_message_task", 8192, this, 20, NULL);
+    xTaskCreate(messageDeliveredTask, "message_delivered_task", 8192, this, 15, NULL);
   }
 
   return ok;
