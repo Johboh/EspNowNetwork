@@ -1,9 +1,9 @@
 #include "DeviceFootPedal.h"
 #include <DeviceUtils.h>
 
-DeviceFootPedal::DeviceFootPedal(IMQTTRemote &mqtt_remote, uint64_t mac_address, std::string name_prefix,
+DeviceFootPedal::DeviceFootPedal(IMQTTRemote &mqtt_remote, uint64_t mac_address, std::string name_suffix,
                                  std::function<void(uint8_t)> on_click)
-    : _mac_address(mac_address), _name_prefix(name_prefix), _mqtt_remote(mqtt_remote), _on_click(on_click) {}
+    : _mac_address(mac_address), _name_suffix(name_suffix), _mqtt_remote(mqtt_remote), _on_click(on_click) {}
 
 bool DeviceFootPedal::onMessage(const uint8_t retries, const uint8_t version, const uint8_t *message) {
   switch (version) {
