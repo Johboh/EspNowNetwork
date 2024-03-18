@@ -4,6 +4,7 @@
 #include <Device.h>
 #include <cstdint>
 #include <esp_log.h>
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
