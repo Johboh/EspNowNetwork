@@ -12,6 +12,12 @@
 #include <optional>
 #include <string>
 
+/*
+ * This example depend on the following libraries:
+ * johboh/MQTTRemote - for the MQTT implementation.
+ * johboh/ConnectionHelper - For host OTA and WiFi setup (not for nodes OTA)
+ */
+
 using namespace std::placeholders;
 
 #define TAG "example"
