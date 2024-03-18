@@ -2,7 +2,6 @@
 #define __IDEVICE_MANAGER_H__
 
 #include <Device.h>
-#include <IMQTTRemote.h>
 #include <cstdint>
 #include <esp_log.h>
 #include <map>
