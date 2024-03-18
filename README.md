@@ -4,22 +4,20 @@
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 [![Clang-format](https://github.com/Johboh/EspNowNetwork/actions/workflows/clang-format.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork)
 
-
-Arduino (using Arduino IDE or PlatformIO) and ESP-IDF (using Espressif IoT Development Framework or PlatformIO) compatible library for setting up a network of ESP NOW nodes
+### Summary
+Arduino (using Arduino IDE or PlatformIO) and ESP-IDF (using Espressif IoT Development Framework or PlatformIO) compatible library for setting up a network of [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) nodes.
 
 ### Usage/Purpose
-The use case for the EspNowNetwork is to run a a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network for battery powered sensors.
+One use case for the EspNowNetwork is to run a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network of battery powered nodes with sensors, where the nodes will sleep most of the time and low power is an important factor. Nodes will wake up either due to external interrupt (like a PIR sensor or switch) or perodically based on time. Upon wakeup, they will send their sensors values and go back to sleep. On the receiving side, there is a always powered router board that will receive the sensor values and act on or forward them for consumption somewhere else, like MQTT and/or [Home Assistant](https://www.home-assistant.io).
 
-The sensors are low power boards that are in deep sleep most of the time, and wake up either due to external interrupt (like a PIR sensor or switch) or perodically based on time. Upon wakeup, they will send their sensors values and go back to sleep. On the receiving side, there is a always powered router board that will receive the sensor values and act on or forward them. In my setup, I forward these to MQTT which I later consumer from [Home Assistant](https://www.home-assistant.io).
-
-Features:
+### Features
 - **Encryption**: ESP-NOW have built in encryption, but that relies on that the host adds all peers to be able to decrypt messages. There is a limit on how many peers one can have when using encryption (17). So instead there is an application layer encryption applied using [GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode). Each message is unique and valid only once to prevent replay attacks.
 - **Generic firmware**: For boards that do the same thing (e.g. they have the same hardware), the same firmware can be used for all of them. No unique ID is required to be programmed into each board/node.
-- **Over The Air/OTA**: A node can be updated Over The Air. The node report their firmware version upon handsake, and the host can send back wifi credentials and an URL where to download the new firmware. The node will download the firmware, write it and restart.
+- **Over The Air/OTA**: A node can be updated Over The Air. The node report their firmware version upon handsake, and the host can send back wifi credentials and an URL where to download the new firmware. The node will download the firmware, flash it and restart.
 
 ### Installation
 There are a set if different variants of this library you can use.
-- **EspNowNetworkNode**: This is the node only code. Use this in your node project.
+- **EspNowNetworkNode**: Use this for your nodes. This library provide a way to setup ESP-NOW and for sending messages, as well as doing OTA updates when the host indicates that a new firmware version is available.
   - PlatformIO: Add the following to `libs_deps`:
     ```
     Johboh/EspNowNetworkNode@^0.6.3
@@ -30,18 +28,27 @@ There are a set if different variants of this library you can use.
       johboh/EspNowNetworkNode:
         version: ">=0.6.3"
     ```
-- **EspNowNetworkHost**: This is the host only code. It contains the basics for receiving messages from the node. But for a real life environment, you want to handle different kind of nodes and application messages, as well as firmware/OTA support for the nodes. For that, you can instead use the **EspNowNetworkHostDriver** (see below).
-  - PlatformIO: Add the following to `libs_deps`:
-    ```
-    Johboh/EspNowNetworkHost@^0.6.3
-    ```
-  - Add to `idf_component.yml` next to your main component:
-    ```
-    dependencies:
-      johboh/EspNowNetworkHost:
-        version: ">=0.6.3"
-    ```
-- **EspNowNetworkHostDriver**: Same as EspNowNetworkHost, but with support for "virtual" nodes and firmware/OTA updates. See the [Arduino](examples/arduino/host_driver/HostDriver.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) example.
+  See the [Arduino](examples/arduino/node/Node.ino) or [ESP-IDF](examples/espidf/node/main/main.cpp) for full examples. In short (this is nota complete example):
+  ```c++
+  struct MyApplicationMessage {
+    uint8_t id = 0x01;
+    double temperature;
+  };
+
+  EspNowPreferences _esp_now_preferences;
+  EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
+  EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_status, _on_log,
+                         arduino_esp_crt_bundle_attach);
+
+  void main() {
+    _esp_now_preferences.initalizeNVS();
+    _esp_now_node.setup();
+    _esp_now_node.sendMessage(&message, sizeof(MyApplicationMessage));
+    esp_deep_sleep(SLEEP_TIME_US);
+  }
+  ```
+
+- **EspNowNetworkHostDriver**: Use this for your host. This library receives messages from the nodes and forward or handle the received data by handling nodes as Devices. It also provide a way to perform firmware updates by incoperating a [Firmware Checker](src/host_driver/FirmwareChecker.h) which checks for new firmwares on a HTTP server. It is also possible to implement a custom [Firmware Checker](src/host_driver/IFirmwareChecker.h) to match your HTTP server setup. There is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](src/host_driver/FirmwareChecker.h) located [here](firmware%20http%20server).
   - PlatformIO: Add the following to `libs_deps`:
     ```
     Johboh/EspNowNetworkHostDriver@^0.6.3
@@ -52,7 +59,42 @@ There are a set if different variants of this library you can use.
       johboh/EspNowNetworkHostDriver:
         version: ">=0.6.3"
     ```
-- **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects.
+  See the [Arduino](examples/arduino/host_driver/HostDriver.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) for full examples. In short (this is nota complete example):
+  ```c++
+  DeviceFootPedal _device_foot_pedal_left(0x543204017648, "Left");
+  DeviceFootPedal _device_foot_pedal_right(0x543204016bfc, "Right");
+
+  std::vector<std::reference_wrapper<Device>> _devices{_device_foot_pedal_left, _device_foot_pedal_right};
+  DeviceManager _device_manager(_devices, []() { return _mqtt_remote.connected(); });
+  FirmwareChecker _firmware_checker(firmware_update_base_url, _devices);
+  HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encryption_key esp_now_encryption_secret,
+                        [](const std::string message, const std::string sub_path, const bool retain) {
+                          _mqtt_remote.publishMessage(_mqtt_remote.clientId() + sub_path, message, retain);
+                        });
+
+  void setup() {
+    _host_driver.setup(_firmware_checker);
+  }
+
+  void loop() {
+    _device_manager.handle();
+    _firmware_checker.handle();
+  }
+  ```
+
+- **EspNowNetworkHost**: This is just the bare host library, without a Device Manager, Host Driver nor Firmware Checker. I still recommend using the **EspNowNetworkHostDriver**, but if you want to roll the host fully on your own, this is the library to use.
+  - PlatformIO: Add the following to `libs_deps`:
+    ```
+    Johboh/EspNowNetworkHost@^0.6.3
+    ```
+  - Add to `idf_component.yml` next to your main component:
+    ```
+    dependencies:
+      johboh/EspNowNetworkHost:
+        version: ">=0.6.3"
+    ```
+
+- **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects. Instead, use the induvidual libraries listed above.
 
 ### Examples
 - [Arduino: Host](examples/arduino/host/Host.ino)
@@ -62,7 +104,7 @@ There are a set if different variants of this library you can use.
 - [ESP-IDF: Host Driver](examples/espidf/host_driver/main/main.cpp)
 - [ESP-IDF: Node](examples/espidf/node/main/main.cpp)
 
-### Parition table (for the Node)
+### Parition table (for the Node (and for the host/host driver if using OTA for the host))
 You need to have two app partitions in your parition table to be able to swap between otas. This is an example:
 ```
 # Name,   Type,  SubType, Offset,          Size, Flags
@@ -82,7 +124,6 @@ To set partition table, save above in a file called `partitions_with_ota.csv`. F
 Newer version most probably work too, but they have not been verified.
 
 ### Dependencies
-- *For Host Driver, an MQTT implementation is required.* There is a copy of [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) in this library from [Johboh/MQTTRemote](https://github.com/Johboh/MQTTRemote). You can either add a dependency on [MQTTRemote](https://github.com/Johboh/MQTTRemote) to get a fully working MQTT client (the examples are using this dependency), or you can implement/adapt/forward to your own MQTT implementation. This library only depend on the [IMQTTRemote](https://github.com/Johboh/MQTTRemote/blob/main/includes/IMQTTRemote.h) interface.
 - Needs C++17 for `std::optional`.
   - For platformIO in `platformio.ini`:
     ```C++
