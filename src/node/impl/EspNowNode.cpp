@@ -260,6 +260,7 @@ void EspNowNode::teardown() {
   esp_wifi_stop();
   if (_netif_sta != nullptr) {
     esp_netif_destroy_default_wifi(_netif_sta);
+    _netif_sta = nullptr;
   }
   esp_event_loop_delete_default();
   esp_netif_deinit();
