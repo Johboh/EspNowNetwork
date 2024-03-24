@@ -43,8 +43,8 @@ EspNowPreferences _esp_now_preferences;
 EspNowCrypt _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret);
 EspNowNode _esp_now_node(_esp_now_crypt, _esp_now_preferences, FIRMWARE_VERSION, _on_status, _on_host_log,
                          esp_crt_bundle_attach);
-EspNowHost _esp_now_host(_esp_now_crypt, EspNowHost::WiFiInterface::STA, _on_new_message, _on_application_message,
-                         _firmware_update_available, _on_node_log);
+EspNowHost _esp_now_host(_esp_now_crypt, {.wifi_interface = EspNowHost::WiFiInterface::STA}, _on_new_message,
+                         _on_application_message, _firmware_update_available, _on_node_log);
 
 extern "C" {
 void app_main();
