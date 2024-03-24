@@ -55,10 +55,10 @@ void EspNowHost::esp_now_on_data_callback(const esp_now_recv_info_t *esp_now_inf
 }
 #endif
 
-EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::WiFiInterface wifi_interface, OnNewMessage on_new_message,
+EspNowHost::EspNowHost(EspNowCrypt &crypt, EspNowHost::Configuration configuration, OnNewMessage on_new_message,
                        OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update,
                        OnLog on_log)
-    : _crypt(crypt), _wifi_interface(wifi_interface), _on_log(on_log), _on_new_message(on_new_message),
+    : _crypt(crypt), _configuration(configuration), _on_log(on_log), _on_new_message(on_new_message),
       _firwmare_update(firwmare_update), _on_application_message(on_application_message) {}
 
 void EspNowHost::newMessageTask(void *pvParameters) {
@@ -123,14 +123,19 @@ bool EspNowHost::start() {
 #endif
   log("Registering receive callback for ESP-NOW failed:", r);
 
-  r = esp_now_register_send_cb(esp_now_on_data_sent);
-  log("Registering send callback for esp now failed:", r);
+  if (_configuration.with_delivered_task) {
+    r = esp_now_register_send_cb(esp_now_on_data_sent);
+    log("Registering send callback for esp now failed:", r);
+  }
 
   auto ok = r == ESP_OK;
 
   if (ok) {
     xTaskCreate(newMessageTask, "new_message_task", 8192, this, 20, NULL);
-    xTaskCreate(messageDeliveredTask, "message_delivered_task", 8192, this, 15, NULL);
+    if (_configuration.with_delivered_task) {
+      // messageDeliveredTask is only used for logging.
+      xTaskCreate(messageDeliveredTask, "message_delivered_task", 8192, this, 15, NULL);
+    }
   }
 
   return ok;
@@ -258,7 +263,7 @@ void EspNowHost::handleChallengeRequest(uint8_t *mac_addr, uint32_t challenge_ch
 
 void EspNowHost::sendMessageToTemporaryPeer(uint8_t *mac_addr, void *message, size_t length) {
   esp_now_peer_info_t peer_info;
-  peer_info.ifidx = _wifi_interface == WiFiInterface::AP ? WIFI_IF_AP : WIFI_IF_STA;
+  peer_info.ifidx = _configuration.wifi_interface == WiFiInterface::AP ? WIFI_IF_AP : WIFI_IF_STA;
   // Channel 0 means "use the current channel which station or softap is on".
   peer_info.channel = 0;
   peer_info.encrypt = false; // Never use esp NOW encryption. We run our own encryption (see EspNowCryp.h)

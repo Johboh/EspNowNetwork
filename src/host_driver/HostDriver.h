@@ -40,22 +40,40 @@ public:
    */
   using OnMessage = std::function<void(void)>;
 
+  struct Configuration {
+    /**
+     * @brief The SSID for the WiFi network that nodes should use when performing firmware update.
+     */
+    const char *wifi_ssid;
+    /**
+     * @brief The password for the WiFi network that nodes should use when performing firmware update.
+     */
+    const char *wifi_password;
+    /**
+     * @brief Encyption key used for our packet encryption (GCM). Must be exact 16 bytes long. \0
+     * does not count.
+     */
+    const char *esp_now_encryption_key;
+    /**
+     * @brief Used to validate the integrity of the messages. We expect the decrypted payload to
+     * contain this string. Must be exact 8 bytes long. \0 does not count.
+     */
+    const char *esp_now_encryption_secret;
+    /**
+     * @brief Host configuration.
+     */
+    EspNowHost::Configuration host_configuration = {};
+  };
+
   /**
    * @brief Construct a new Host Driver object
    *
    * @param device_manager the Device Manager to use.
-   * @param wifi_ssid The SSID for the WiFi network that nodes should use when performing firmware update.
-   * @param wifi_password The password for the WiFi network that nodes should use when performing firmware update.
-   * @param esp_now_encryption_key Encyption key used for our packet encryption (GCM). Must be exact 16 bytes long. \0
-   * does not count.
-   * @param esp_now_encryption_secret Used to validate the integrity of the messages. We expect the decrypted payload to
-   * contain this string. Must be exact 8 bytes long. \0 does not count.
+   * @param configuration the configuration to use. See [Configuration] struct.
    * @param on_log Callback when the device manager want to log something.
    * @param on_message Callback on new message recieved.
    */
-  HostDriver(IDeviceManager &device_manager, const char *wifi_ssid, const char *wifi_password,
-             const char *esp_now_encryption_key, const char *esp_now_encryption_secret, OnLog on_log = {},
-             OnMessage on_message = {});
+  HostDriver(IDeviceManager &device_manager, Configuration configuration, OnLog on_log = {}, OnMessage on_message = {});
 
 public:
   /**

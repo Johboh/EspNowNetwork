@@ -1,4 +1,4 @@
-version: "0.6.3"
+version: "0.6.4"
 description: Library for setting up a network of ESP NOW nodes - Node only
 url: https://github.com/Johboh/EspNowNetwork
 dependencies:

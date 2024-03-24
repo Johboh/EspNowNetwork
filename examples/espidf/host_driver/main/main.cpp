@@ -89,7 +89,13 @@ DeviceManager _device_manager(_devices, []() { return _mqtt_remote.connected(); 
 FirmwareChecker _firmware_checker(firmware_update_base_url, _devices, {.check_every_ms = 30000});
 
 // Setup host driver.
-HostDriver _host_driver(_device_manager, wifi_ssid, wifi_password, esp_now_encryption_key, esp_now_encryption_secret,
+HostDriver _host_driver(_device_manager,
+                        {
+                            .wifi_ssid = wifi_ssid,
+                            .wifi_password = wifi_password,
+                            .esp_now_encryption_key = esp_now_encryption_key,
+                            .esp_now_encryption_secret = esp_now_encryption_secret,
+                        },
                         [](const std::string message, const std::string sub_path, const bool retain) {
                           _mqtt_remote.publishMessage(_mqtt_remote.clientId() + sub_path, message, retain);
                         });

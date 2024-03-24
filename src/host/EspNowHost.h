@@ -78,23 +78,41 @@ public:
     STA, // Use the Station/Client interface for ESP-NOW.
   };
 
+  struct Configuration {
+    /**
+     * @brief what network interface to use to send ESP-NOW messages on. You need to setup this interface beforehand
+     * when setting up your WiFi.
+     */
+    WiFiInterface wifi_interface = WiFiInterface::STA;
+    /**
+     * @brief If true, will create a task that will print if messages sent to nodes was delivered sucessful or not.
+     * Useful for debugging.
+     */
+    bool with_delivered_task = true;
+  };
+
 public:
   /**
    * @brief Construct a new EspNowHost
    *
    * @param crypt the EspNowCrypt to use for encrypting/decrypting messages.
-   * @param wifi_interface what network interface to use to send ESP-NOW messages on. You need to setup this interface
-   * beforehand when setting up your WiFi.
+   * @param configuration the configuration to use.
    * @param on_new_message callback on any new message received, regardless of type, validation, decrypted correctly
-   * etc. Intended for turning on led or similar to indicate new package.
-   * @param on_application_message callback when there is a verified, decrypted application message received.
-   * @param firwmare_update callback to check if a firmware update is available. Please note that this function will be
+   * etc. Intended for turning on led or similar to indicate new package. Please note that this function will be
    * called on every challenge request sent by the node, so this function must return fast and not perform any heavy
-   * computation or network. This function should preferably just do a lookup in a lookup table to check if a given node
-   * and its firmware version have new firmware.
-   * @param on_log callback when the host want to log something.
+   * computation or network.
+   * @param on_application_message callback when there is a verified, decrypted application message received. Please
+   * note that this function will be called on every challenge request sent by the node, so this function must
+   * return fast and not perform any heavy computation or network.
+   * @param firwmare_update callback to check if a firmware update is available. Please note that this function will
+   * be called on every challenge request sent by the node, so this function must return fast and not perform any
+   * heavy computation or network. This function should preferably just do a lookup in a lookup table to check if a
+   * given node and its firmware version have new firmware.
+   * @param on_log callback when the host want to log something. Please note that this function will be
+   * called on every challenge request sent by the node, so this function must return fast and not perform any heavy
+   * computation or network.
    */
-  EspNowHost(EspNowCrypt &crypt, WiFiInterface wifi_interface, OnNewMessage on_new_message,
+  EspNowHost(EspNowCrypt &crypt, Configuration configuration, OnNewMessage on_new_message,
              OnApplicationMessage on_application_message, FirmwareUpdateAvailable firwmare_update = {},
              OnLog on_log = {});
 
@@ -130,7 +148,7 @@ private:
 
 private:
   EspNowCrypt &_crypt;
-  WiFiInterface _wifi_interface;
+  Configuration _configuration;
   // Map from MAC address to challenge.
   std::map<uint64_t, uint32_t> _challenges;
 

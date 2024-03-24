@@ -3,14 +3,15 @@
 
 using namespace std::placeholders;
 
-HostDriver::HostDriver(IDeviceManager &device_manager, const char *wifi_ssid, const char *wifi_password,
-                       const char *esp_now_encryption_key, const char *esp_now_encryption_secret, OnLog on_log,
+HostDriver::HostDriver(IDeviceManager &device_manager, HostDriver::Configuration configuration, OnLog on_log,
                        OnMessage on_message)
-    : _on_log(on_log), _on_message(on_message), _esp_now_crypt(esp_now_encryption_key, esp_now_encryption_secret),
-      _esp_now_host(_esp_now_crypt, EspNowHost::WiFiInterface::STA, std::bind(&HostDriver::onNewMessage, this),
-                    std::bind(&HostDriver::onNewApplicationMessage, this, _1, _2),
-                    std::bind(&HostDriver::onFirmwareUpdate, this, _1, _2, wifi_ssid, wifi_password),
-                    std::bind(&HostDriver::onHostLog, this, _1, _2)),
+    : _on_log(on_log), _on_message(on_message),
+      _esp_now_crypt(configuration.esp_now_encryption_key, configuration.esp_now_encryption_secret),
+      _esp_now_host(
+          _esp_now_crypt, configuration.host_configuration, std::bind(&HostDriver::onNewMessage, this),
+          std::bind(&HostDriver::onNewApplicationMessage, this, _1, _2),
+          std::bind(&HostDriver::onFirmwareUpdate, this, _1, _2, configuration.wifi_ssid, configuration.wifi_password),
+          std::bind(&HostDriver::onHostLog, this, _1, _2)),
       _device_manager(device_manager) {
   _device_manager.addOnLog(std::bind(&HostDriver::onDeviceManagerLog, this, _1, _2));
 }
