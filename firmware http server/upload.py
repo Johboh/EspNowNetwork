@@ -6,7 +6,8 @@ import hashlib
 
 parser = argparse.ArgumentParser(description='Upload firmware to HTTP storage')
 
-parser.add_argument('-u', '--base_url', required=True, help="URL on where to upload the firmware.bin and the firmware_version.txt")
+parser.add_argument('-u', '--base_url', required=True, help="URL on where to upload the firmware.bin, firmware.md5 and the firmware_version.txt")
+parser.add_argument('-k', '--kicker_url', help="URL to make a request to after successful upload. This can be used to notify a router that there is new firmware available/to check.")
 parser.add_argument('-f', '--firmware_version', help="The firmware version for the binary")
 parser.add_argument('-F', '--firmware_version_file', help="The file containing the firmware version for the binary")
 parser.add_argument('firmware', help="Path to the firmware.bin that should be uploaded")
@@ -15,6 +16,7 @@ args = parser.parse_args()
 
 base_url = args.base_url
 firmware = args.firmware
+kicker_url = args.kicker_url
 firmware_version = args.firmware_version
 firmware_version_file = args.firmware_version_file
 
@@ -44,3 +46,10 @@ files = {'file': ('firmware.md5', md5)}
 requests.post(base_url, files=files)
 
 print("Uploaded %s as firmware.bin with firmware version %s and MD5 %s to %s" % (firmware, firmware_version, md5, base_url))
+
+try:
+    if kicker_url is not None:
+        print("Kicking URL %s" % kicker_url)
+        requests.get(kicker_url)
+except Exception as e:
+    print("Failed to kick URL %s: %s" % (kicker_url, e))
