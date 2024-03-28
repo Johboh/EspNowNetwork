@@ -10,9 +10,10 @@
 using OnLog = IFirmwareKicker::OnLog;
 
 /**
- * @brief A HTTP server listenting on GET calls to /kicker with a device and (optionally) hardware query
+ * @brief A HTTP server listenting on GET calls to /kicker with a device type and (optionally) hardware query
  * parameter. Once received, will call Firmware Checker to check if there is a new firmware version available for the
- * device & hardware combo.
+ * type & hardware combo.
+ * Example: GET /kicker?type=foot_pedal&hardware=esp32c3
  */
 class FirmwareKicker : public IFirmwareKicker {
 public:

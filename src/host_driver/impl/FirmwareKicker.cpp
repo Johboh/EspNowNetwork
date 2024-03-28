@@ -48,13 +48,13 @@ esp_err_t FirmwareKicker::httpGetHandler(httpd_req_t *req) {
   esp_err_t err = httpd_req_get_url_query_str(req, query_buffer.get(), required_size);
   if (err == ESP_OK) {
     char param[255] = {0};
-    err = httpd_query_key_value(query_buffer.get(), "device", param, sizeof(param));
+    err = httpd_query_key_value(query_buffer.get(), "type", param, sizeof(param));
     if (err != ESP_OK) {
-      _this->log("Failed to parse device from query: " + std::string(esp_err_to_name(err)), ESP_LOG_WARN);
+      _this->log("Failed to parse type from query: " + std::string(esp_err_to_name(err)), ESP_LOG_WARN);
       httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Failed to parse device from query");
       return ESP_OK;
     }
-    std::string device(param);
+    std::string type(param);
 
     err = httpd_query_key_value(query_buffer.get(), "hardware", param, sizeof(param));
     std::optional<std::string> hardware = std::nullopt;
@@ -62,9 +62,9 @@ esp_err_t FirmwareKicker::httpGetHandler(httpd_req_t *req) {
       hardware = std::string(param);
     }
 
-    _this->log("Got kicked with device: " + device + " and hardware: " + (hardware ? hardware.value() : "<absent>"),
+    _this->log("Got kicked with type: " + type + " and hardware: " + (hardware ? hardware.value() : "<absent>"),
                ESP_LOG_INFO);
-    _this->_firmware_checker.checkNow(device, hardware);
+    _this->_firmware_checker.checkNow(type, hardware);
   } else {
     _this->log("Failed to get query string:" + std::string(esp_err_to_name(err)), ESP_LOG_ERROR);
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Failed to get query string");

@@ -70,9 +70,9 @@ void FirmwareChecker::checkFirmware(FirmwareDevice &device) {
   std::string version_url =
       _base_url + device.type + (hardware_opt ? "/" + hardware_opt.value() : "") + "/firmware_version.txt";
 
-  auto device_and_hardware_str = device.type + (hardware_opt ? " and hardware " + hardware_opt.value() : "");
+  auto device_and_hardware_str = "type " + device.type + (hardware_opt ? " and hardware " + hardware_opt.value() : "");
 
-  log("Checking for type " + device_and_hardware_str + " using URL " + version_url, ESP_LOG_INFO);
+  log("Checking for " + device_and_hardware_str + " using URL " + version_url, ESP_LOG_INFO);
 
   std::optional<uint32_t> version = std::nullopt;
   std::optional<std::string> md5 = std::nullopt;
@@ -82,11 +82,9 @@ void FirmwareChecker::checkFirmware(FirmwareDevice &device) {
     uint32_t version_from_string = strtol(version_string.value().c_str(), nullptr, 10);
     if (version_from_string > 0) {
       version = version_from_string;
-      log("Got firmware version for type " + device_and_hardware_str + ": " + std::to_string(version.value()),
-          ESP_LOG_INFO);
+      log("Got firmware version for " + device_and_hardware_str + ": " + std::to_string(version.value()), ESP_LOG_INFO);
     } else {
-      log("Got invalid firmware version for type " + device_and_hardware_str + ": " + version_string.value(),
-          ESP_LOG_WARN);
+      log("Got invalid firmware version for " + device_and_hardware_str + ": " + version_string.value(), ESP_LOG_WARN);
     }
   } else {
     log("Failed to get version for " + device_and_hardware_str, ESP_LOG_WARN);
@@ -94,7 +92,7 @@ void FirmwareChecker::checkFirmware(FirmwareDevice &device) {
 
   md5 = FirmwareCheckerUtils::getContentStringForUrl(md5_url);
   if (md5) {
-    log("Got firmware md5 for type " + device_and_hardware_str + ": " + md5.value(), ESP_LOG_INFO);
+    log("Got firmware md5 for " + device_and_hardware_str + ": " + md5.value(), ESP_LOG_INFO);
   } else {
     log("Failed to get firmware md5 for " + device_and_hardware_str, ESP_LOG_WARN);
   }
@@ -109,7 +107,7 @@ void FirmwareChecker::checkFirmware(FirmwareDevice &device) {
   } else {
     // On failure, clear.
     _firmware_version_for_device.erase(device);
-    log("Unable to get firmware version or md5 for type " + device_and_hardware_str, ESP_LOG_WARN);
+    log("Unable to get firmware version or md5 for " + device_and_hardware_str, ESP_LOG_WARN);
   }
 }
 
