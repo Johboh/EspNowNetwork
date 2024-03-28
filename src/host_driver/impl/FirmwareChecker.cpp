@@ -132,6 +132,7 @@ void FirmwareChecker::checkNow(const std::string device_type, const std::optiona
       .type = device_type,
       .hardware = device_hardware,
   };
+
   // Force check for manual polling.
   _checked_device_last_at_ms = 0;
   // Force check for threaded polling.

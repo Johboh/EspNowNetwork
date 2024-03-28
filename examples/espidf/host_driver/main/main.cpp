@@ -3,6 +3,7 @@
 #include <Device.h>
 #include <DeviceManager.h>
 #include <FirmwareChecker.h>
+#include <FirmwareKicker.h>
 #include <HostDriver.h>
 #include <MQTTRemote.h>
 #include <OtaHelper.h>
@@ -35,6 +36,7 @@ const char firmware_update_base_url[] = "http://192.168.1.100:8080/";
 const char mqtt_username[] = "mqtt-username";
 const char mqtt_password[] = "mqtt-password";
 const int mqtt_port = 1883;
+const int firmware_kicker_port = 82;
 
 // Encyption key used for our own packet encryption (GCM).
 // We are not using the esp-now encryption due to the peer limitation.
@@ -87,6 +89,7 @@ std::vector<std::reference_wrapper<Device>> _devices{_device_foot_pedal_left, _d
 // Create Device Manager and Firmware Checker and register devices.
 DeviceManager _device_manager(_devices, []() { return _mqtt_remote.connected(); });
 FirmwareChecker _firmware_checker(firmware_update_base_url, _devices, {.check_every_ms = 30000});
+FirmwareKicker _firmware_kicker(_firmware_checker, firmware_kicker_port);
 
 // Setup host driver.
 HostDriver _host_driver(_device_manager,
@@ -121,12 +124,13 @@ void app_main(void) {
     // Start MQTT
     _mqtt_remote.start();
 
-    // Start host driver with FirmwareChecker
-    _host_driver.setup(_firmware_checker);
+    // Start host driver with Firmware Checker and Firmware Kicker (both optional)
+    _host_driver.setup(_firmware_checker, _firmware_kicker);
 
-    // Start task for the device manager and firmware checker
+    // Start task for the device manager and firmware checker and start firmware kicker
     _device_manager.startTask();
     _firmware_checker.startTask();
+    _firmware_kicker.start();
   } else {
     ESP_LOGE(TAG, "Failed to connect to WiFI");
   }

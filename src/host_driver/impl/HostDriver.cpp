@@ -16,13 +16,19 @@ HostDriver::HostDriver(IDeviceManager &device_manager, HostDriver::Configuration
   _device_manager.addOnLog(std::bind(&HostDriver::onDeviceManagerLog, this, _1, _2));
 }
 
-void HostDriver::setup(std::optional<std::reference_wrapper<IFirmwareChecker>> firmware_checker) {
+void HostDriver::setup(std::optional<std::reference_wrapper<IFirmwareChecker>> firmware_checker,
+                       std::optional<std::reference_wrapper<IFirmwareKicker>> firmware_kicker) {
   _esp_now_host.setup();
+  _firmware_kicker = firmware_kicker;
   _firmware_checker = firmware_checker;
   if (_firmware_checker) {
     auto &firmware_checker = _firmware_checker.value().get();
-    firmware_checker.addOnLog(std::bind(&HostDriver::onFirwmareLog, this, _1, _2));
+    firmware_checker.addOnLog(std::bind(&HostDriver::onFirwmareCheckerLog, this, _1, _2));
     firmware_checker.addOnAvailableFirmware(std::bind(&HostDriver::onAvailableFirwmare, this, _1, _2, _3, _4));
+  }
+  if (_firmware_kicker) {
+    auto &firmware_kicker = _firmware_kicker.value().get();
+    firmware_kicker.addOnLog(std::bind(&HostDriver::onFirmwareKickerLog, this, _1, _2));
   }
 }
 
@@ -62,7 +68,17 @@ void HostDriver::onHostLog(const std::string message, const esp_log_level_t log_
   log("/log/" + level, "[#" + std::to_string(_log_messages++) + "] " + message);
 }
 
-void HostDriver::onFirwmareLog(const std::string message, const esp_log_level_t log_level) {
+void HostDriver::onFirmwareKickerLog(const std::string message, const esp_log_level_t log_level) {
+  if (log_level == ESP_LOG_NONE) {
+    return; // Weird flex, but ok
+  }
+
+  std::string level = logLevelToString(log_level);
+
+  log("/firmware/kicker/log/" + level, "[#" + std::to_string(_log_messages++) + "] " + message);
+}
+
+void HostDriver::onFirwmareCheckerLog(const std::string message, const esp_log_level_t log_level) {
   if (log_level == ESP_LOG_NONE) {
     return; // Weird flex, but ok
   }

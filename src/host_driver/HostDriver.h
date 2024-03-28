@@ -7,6 +7,7 @@
 #include <FirmwareChecker.h>
 #include <IDeviceManager.h>
 #include <IFirmwareChecker.h>
+#include <IFirmwareKicker.h>
 #include <cstdint>
 #include <driver/gpio.h>
 #include <functional>
@@ -80,8 +81,10 @@ public:
    * @brief Call to setup the host.
    *
    * @param firmware_checker the Firmware Checker to use. Optional.
+   * @param firmware_kicker the Firmware Kicker to use. Optional.
    */
-  void setup(std::optional<std::reference_wrapper<IFirmwareChecker>> firmware_checker = std::nullopt);
+  void setup(std::optional<std::reference_wrapper<IFirmwareChecker>> firmware_checker = std::nullopt,
+             std::optional<std::reference_wrapper<IFirmwareKicker>> firmware_kicker = std::nullopt);
 
 private:
   std::string logLevelToString(const esp_log_level_t log_level);
@@ -89,7 +92,8 @@ private:
 private:
   void onNewMessage();
   void onHostLog(const std::string message, const esp_log_level_t log_level);
-  void onFirwmareLog(const std::string message, const esp_log_level_t log_level);
+  void onFirmwareKickerLog(const std::string message, const esp_log_level_t log_level);
+  void onFirwmareCheckerLog(const std::string message, const esp_log_level_t log_level);
   void onAvailableFirwmare(const std::string device_type, const std::optional<std::string> device_hardware,
                            const uint32_t firmware_version, const std::string firmware_md5);
   void onDeviceManagerLog(const std::string message, const esp_log_level_t log_level);
@@ -108,6 +112,7 @@ private:
   EspNowCrypt _esp_now_crypt;
   EspNowHost _esp_now_host;
   IDeviceManager &_device_manager;
+  std::optional<std::reference_wrapper<IFirmwareKicker>> _firmware_kicker;
   std::optional<std::reference_wrapper<IFirmwareChecker>> _firmware_checker;
 
 private:

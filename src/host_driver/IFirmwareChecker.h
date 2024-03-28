@@ -21,6 +21,11 @@ public:
   /**
    * @brief Given a firmare version, get the update URI and md5 to use to update this device to a newer version.
    * Optional absent if there is no newer firmware available.
+   * This has to return fast and not do any blocking networking or I/O. This will be called on each received ESP-NOW
+   * challenge message to check if there is any new firmware available, and if so, return the update information to the
+   * node. This should only check some in memory structure to determine if there is a new firmware. Any longer stalling
+   * will prevent nodes from receiving their challenge confirmation messages and thus preventing them from sending there
+   * application message.
    *
    * @param version the current firmware version of the device.
    * @param type the type to get firmware version for (one of devices())
