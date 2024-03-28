@@ -5,6 +5,8 @@
 #include "IFirmwareChecker.h"
 #include "esp_log.h"
 #include <cstdint>
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
 #include <map>
 #include <optional>
 #include <set>
@@ -104,6 +106,10 @@ public:
   std::optional<IFirmwareChecker::UpdateInformation> getUpdateUrl(uint32_t version, std::string type,
                                                                   std::optional<std::string> hardware) override;
 
+  // See IFirmwareChecker
+  void checkNow(const std::string device_type,
+                const std::optional<std::string> device_hardware = std::nullopt) override;
+
 private:
   /**
    * @brief Log if log callback is available.
@@ -113,6 +119,7 @@ private:
   static void run_task(void *pvParams);
 
   void checkFirmware();
+  void checkFirmware(FirmwareDevice &device);
 
 private:
   struct Firmware {
@@ -123,8 +130,10 @@ private:
   std::string _base_url;
   std::vector<OnLog> _on_log;
   Configuration _configuration;
+  EventGroupHandle_t _check_now_event_group;
   std::set<FirmwareDevice> _available_devices;
   std::vector<OnAvailableFirmware> _on_available_firmware;
+  std::optional<FirmwareDevice> _device_to_check_now = std::nullopt;
 
   unsigned long _checked_device_last_at_ms = 0;
   std::set<FirmwareDevice>::iterator _devices_iterator = _available_devices.end();

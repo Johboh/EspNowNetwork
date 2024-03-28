@@ -4,6 +4,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#define CHECK_NOW_BIT 1
+
 FirmwareChecker::FirmwareChecker(std::string base_url, const std::vector<std::reference_wrapper<Device>> &devices,
                                  Configuration configuration)
     : _base_url(base_url), _configuration(configuration) {
@@ -11,13 +13,16 @@ FirmwareChecker::FirmwareChecker(std::string base_url, const std::vector<std::re
     auto &device = device_ref.get();
     _available_devices.emplace(FirmwareDevice{device.type(), device.hardware()});
   }
+  _check_now_event_group = xEventGroupCreate();
 }
 
 void FirmwareChecker::run_task(void *pvParams) {
   while (1) {
     FirmwareChecker *_this = (FirmwareChecker *)pvParams;
     _this->checkFirmware();
-    vTaskDelay(_this->_configuration.check_every_ms / portTICK_PERIOD_MS);
+    // Wait for triggered check, or timeout which is the normal check period time.
+    auto period = _this->_configuration.check_every_ms / portTICK_PERIOD_MS;
+    xEventGroupWaitBits(_this->_check_now_event_group, CHECK_NOW_BIT, pdTRUE, pdFALSE, period);
     taskYIELD();
   }
 }
@@ -36,19 +41,30 @@ void FirmwareChecker::handle() {
 
 void FirmwareChecker::checkFirmware() {
 
-  if (_available_devices.empty()) {
-    log("No available types to check.", ESP_LOG_WARN);
-    return;
+  // Have specific device to check now?
+  if (_device_to_check_now) {
+    checkFirmware(_device_to_check_now.value());
+    _device_to_check_now = std::nullopt;
+  } else {
+    // Normal flow.
+    if (_available_devices.empty()) {
+      log("No available types to check.", ESP_LOG_WARN);
+      return;
+    }
+
+    if (_devices_iterator == _available_devices.end()) {
+      _devices_iterator = _available_devices.begin();
+    }
+
+    // Get current time and go to next one for next round.
+    auto device = *_devices_iterator;
+    ++_devices_iterator;
+
+    checkFirmware(device);
   }
+}
 
-  if (_devices_iterator == _available_devices.end()) {
-    _devices_iterator = _available_devices.begin();
-  }
-
-  // Get current time and go to next one for next round.
-  auto device = *_devices_iterator;
-  ++_devices_iterator;
-
+void FirmwareChecker::checkFirmware(FirmwareDevice &device) {
   auto hardware_opt = device.hardware;
   std::string md5_url = _base_url + device.type + (hardware_opt ? "/" + hardware_opt.value() : "") + "/firmware.md5";
   std::string version_url =
@@ -109,6 +125,17 @@ std::optional<FirmwareChecker::UpdateInformation> FirmwareChecker::getUpdateUrl(
   }
   // Did not find any version at all.
   return std::nullopt;
+}
+
+void FirmwareChecker::checkNow(const std::string device_type, const std::optional<std::string> device_hardware) {
+  _device_to_check_now = FirmwareDevice{
+      .type = device_type,
+      .hardware = device_hardware,
+  };
+  // Force check for manual polling.
+  _checked_device_last_at_ms = 0;
+  // Force check for threaded polling.
+  xEventGroupSetBits(_check_now_event_group, CHECK_NOW_BIT);
 }
 
 void FirmwareChecker::log(const std::string message, const esp_log_level_t log_level) {

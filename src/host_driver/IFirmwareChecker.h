@@ -48,8 +48,8 @@ public:
 
   /**
    * @brief callback when a firmware version has been downloaded from the server.
-   * This indicates that there is a firmware available, not nessesary that it is the latest. The version has to be
-   * compared to the current version of the target node.
+   * This indicates that there is a firmware available, not nessesary that it is the latest or newer than any current
+   * firwmare that devices are using. The version has to be compared to the current version of the target node.
    *
    * @param device_type the device type.
    * @param device_hardware the device hardware, optional.
@@ -66,6 +66,16 @@ public:
    * Can be omitted.
    */
   virtual void addOnAvailableFirmware(OnAvailableFirmware on_available_firmware) {}
+
+  /**
+   * @brief Call to force a check of the firmware for the given type and optional hardware.
+   * Once firmware have been fetched, the OnAvailableFirmware callback will be invoked.
+   *
+   * @param device_type the device type.
+   * @param device_hardware the device hardware, optional.
+   */
+  virtual void checkNow(const std::string device_type,
+                        const std::optional<std::string> device_hardware = std::nullopt) {}
 };
 
 #endif // __IFIRMWARE_CHECKER_H__
