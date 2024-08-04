@@ -108,6 +108,7 @@ bool EspNowNode::setup() {
     log("Error initializing ESP-NOW:", r);
     return false;
   } else {
+    _esp_now_initialized = true;
     log("Initializing ESP-NOW OK.", ESP_LOG_INFO);
   }
 
@@ -258,13 +259,20 @@ void EspNowNode::teardown() {
   memset(_host_peer_info.peer_addr, 0x00, ESP_NOW_ETH_ALEN);
 
   esp_wifi_stop();
+
   if (_netif_sta != nullptr) {
     esp_netif_destroy_default_wifi(_netif_sta);
     _netif_sta = nullptr;
   }
   esp_event_loop_delete_default();
   esp_netif_deinit();
-  esp_now_deinit();
+
+  // Can only call esp_now_deinit if we have initialized earlier.
+  if (_esp_now_initialized) {
+    esp_now_deinit();
+    _esp_now_initialized = false;
+  }
+
   esp_wifi_deinit();
 }
 

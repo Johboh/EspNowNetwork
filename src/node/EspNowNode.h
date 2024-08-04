@@ -217,6 +217,7 @@ private:
   esp_netif_t *_netif_sta;
   uint32_t _firmware_version;
   bool _setup_successful = false;
+  bool _esp_now_initialized = false;
   CrtBundleAttach _crt_bundle_attach;
   esp_now_peer_info_t _host_peer_info;
   EspNowNetwork::Preferences &_preferences;
