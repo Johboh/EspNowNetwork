@@ -24,7 +24,7 @@ jobs:
         run: rm -rf .github
 
       - name: Upload EspNowNetwork to component registry
-        uses: espressif/upload-components-ci-action/@v1.0.2
+        uses: espressif/upload-components-ci-action/@v1
         with:
           name: "EspNowNetwork"
           namespace: "johboh"
