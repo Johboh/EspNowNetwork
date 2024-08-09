@@ -20,13 +20,13 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkNode**: Use this for your nodes. This library provide a way to setup ESP-NOW and for sending messages, as well as doing OTA updates when the host indicates that a new firmware version is available.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkNode@^0.6.6
+    Johboh/EspNowNetworkNode@^0.6.7
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkNode:
-        version: ">=0.6.6"
+        version: ">=0.6.7"
     ```
   See the [Arduino](examples/arduino/node/Node.ino) or [ESP-IDF](examples/espidf/node/main/main.cpp) for full examples. In short (this is nota complete example):
   ```c++
@@ -51,13 +51,13 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkHostDriver**: Use this for your host. This library receives messages from the nodes and forward or handle the received data by handling nodes as Devices. It also provide a way to perform firmware updates by incoperating a [Firmware Checker](src/host_driver/FirmwareChecker.h) which checks for new firmwares on a HTTP server. It is also possible to implement a custom [Firmware Checker](src/host_driver/IFirmwareChecker.h) to match your HTTP server setup. There is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](src/host_driver/FirmwareChecker.h) located [here](firmware%20http%20server).
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHostDriver@^0.6.6
+    Johboh/EspNowNetworkHostDriver@^0.6.7
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHostDriver:
-        version: ">=0.6.6"
+        version: ">=0.6.7"
     ```
   See the [Arduino](examples/arduino/host_driver/HostDriver.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) for full examples. In short (this is nota complete example):
   ```c++
@@ -85,13 +85,13 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkHost**: This is just the bare host library, without a Device Manager, Host Driver nor Firmware Checker. I still recommend using the **EspNowNetworkHostDriver**, but if you want to roll the host fully on your own, this is the library to use.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHost@^0.6.6
+    Johboh/EspNowNetworkHost@^0.6.7
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHost:
-        version: ">=0.6.6"
+        version: ">=0.6.7"
     ```
 
 - **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects. Instead, use the induvidual libraries listed above.
