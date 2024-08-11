@@ -1,6 +1,10 @@
 # EspNowNetwork
-[![PlatformIO CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetwork)
-[![ESP-IDF CI](https://github.com/Johboh/EspNowNetwork/actions/workflows/espidf.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetwork)
+[![PlatformIO CI Node](https://github.com/Johboh/EspNowNetworkNode/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetworkNode)
+[![PlatformIO CI Host](https://github.com/Johboh/EspNowNetworkHost/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetworkHost)
+[![PlatformIO CI Host driver](https://github.com/Johboh/EspNowNetworkHostDriver/actions/workflows/platformio.yaml/badge.svg)](https://registry.platformio.org/libraries/johboh/EspNowNetworkHostDriver)
+[![ESP-IDF CI](https://github.com/Johboh/EspNowNetworkNode/actions/workflows/espidf.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetworknode)
+[![ESP-IDF CI](https://github.com/Johboh/EspNowNetworkHost/actions/workflows/espidf.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetworkhost)
+[![ESP-IDF CI](https://github.com/Johboh/EspNowNetworkHostDriver/actions/workflows/espidf.yaml/badge.svg)](https://components.espressif.com/components/johboh/espnownetworkhostdriver)
 [![GitHub release](https://img.shields.io/github/release/Johboh/EspNowNetwork.svg)](https://github.com/Johboh/EspNowNetwork/releases)
 [![Clang-format](https://github.com/Johboh/EspNowNetwork/actions/workflows/clang-format.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork)
 
