@@ -26,12 +26,14 @@ There are a set if different variants of this library you can use.
     ```
     Johboh/EspNowNetworkNode@^0.7.1
     ```
-  - Add to `idf_component.yml` next to your main component:
+  - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkNode:
         version: ">=0.7.1"
     ```
+  - Arduino IDE: Search for `EspNowNetworkNode` by `johboh` in the library manager.
+
   See the [Arduino](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/arduino.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/main/main.cpp) for full examples. In short (this is not a complete example):
   ```c++
   struct MyApplicationMessage {
@@ -57,12 +59,14 @@ There are a set if different variants of this library you can use.
     ```
     Johboh/EspNowNetworkHostDriver@^0.7.1
     ```
-  - Add to `idf_component.yml` next to your main component:
+  - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHostDriver:
         version: ">=0.7.1"
     ```
+  - Arduino IDE: Search for `EspNowNetworkHostDriver` by `johboh` in the library manager.
+
   See the [Arduino](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/arduino.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/main/main.cpp) for full examples. In short (this is nota complete example):
   ```c++
   DeviceFootPedal _device_foot_pedal_left(0x543204017648, "Left");
@@ -91,12 +95,13 @@ There are a set if different variants of this library you can use.
     ```
     Johboh/EspNowNetworkHost@^0.7.1
     ```
-  - Add to `idf_component.yml` next to your main component:
+  - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHost:
         version: ">=0.7.1"
     ```
+  - Arduino IDE: Search for `EspNowNetworkHost` by `johboh` in the library manager.
 
 - **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects. Instead, use the induvidual libraries listed above.
 
