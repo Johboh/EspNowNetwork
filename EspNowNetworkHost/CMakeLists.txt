@@ -1,11 +1,10 @@
 FILE(GLOB_RECURSE host_sources "./../src/host/impl/*.*")
-FILE(GLOB_RECURSE shared_sources "./../src/shared/impl/*.*")
 
 set(required_components esp_wifi mbedtls)
 
 idf_component_register(COMPONENT_NAME "EspNowNetworkHost"
-                        SRCS ${host_sources} ${shared_sources}
-                        INCLUDE_DIRS "./../src/shared/" "./../src/host/"
+                        SRCS ${host_sources}
+                        INCLUDE_DIRS "./../src/host/"
                         REQUIRES ${required_components})
 
 

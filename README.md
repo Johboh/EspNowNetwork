@@ -124,7 +124,7 @@ To set partition table, save above in a file called `partitions_with_ota.csv`. F
 Newer version most probably work too, but they have not been verified.
 
 ### Dependencies
-- (**EspNowNetworkShared**): See [EspNowNetworkShared library](https://github.com/Johboh/EspNowNetworkShared)
+- **EspNowNetworkShared**: See [EspNowNetworkShared library](https://github.com/Johboh/EspNowNetworkShared)
 - Needs C++17 for `std::optional`.
   - For platformIO in `platformio.ini`:
     ```C++
