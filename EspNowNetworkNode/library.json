@@ -7,7 +7,7 @@
   {
     "name": "Johan Böhlin"
   },
-  "version": "0.6.7",
+  "version": "0.6.8",
   "license": "MIT",
   "repository":
   {
@@ -17,7 +17,6 @@
   "build": {
       "libLDFMode": "deep",
       "flags": [
-        "-I src/shared",
         "-I src/node"
       ]
   },
@@ -35,5 +34,11 @@
       "files": ["main.cpp"]
     }
   ],
-  "dependencies": []
+  "dependencies": [
+    {
+      "owner": "johboh",
+      "name": "EspNowNetworkShared",
+      "version": "^1.0.0"
+    }
+  ]
 }
