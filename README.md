@@ -5,7 +5,7 @@
 [![Clang-format](https://github.com/Johboh/EspNowNetwork/actions/workflows/clang-format.yaml/badge.svg)](https://github.com/Johboh/EspNowNetwork)
 
 ### Summary
-Arduino (using Arduino IDE or PlatformIO) and ESP-IDF (using Espressif IoT Development Framework or PlatformIO) compatible library for setting up a network of [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) nodes.
+Arduino (using Arduino IDE or PlatformIO) and ESP-IDF (using Espressif IoT Development Framework or PlatformIO) compatible libraries for setting up a network of [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) nodes.
 
 ### Usage/Purpose
 One use case for the EspNowNetwork is to run a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network of battery powered nodes with sensors, where the nodes will sleep most of the time and low power is an important factor. Nodes will wake up either due to external interrupt (like a PIR sensor or switch) or perodically based on time. Upon wakeup, they will send their sensors values and go back to sleep. On the receiving side, there is a always powered router board that will receive the sensor values and act on or forward them for consumption somewhere else, like MQTT and/or [Home Assistant](https://www.home-assistant.io).
@@ -20,15 +20,15 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkNode**: Use this for your nodes. This library provide a way to setup ESP-NOW and for sending messages, as well as doing OTA updates when the host indicates that a new firmware version is available.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkNode@^0.6.8
+    Johboh/EspNowNetworkNode@^0.7.1
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkNode:
-        version: ">=0.6.8"
+        version: ">=0.7.1"
     ```
-  See the [Arduino](examples/arduino/node/Node.ino) or [ESP-IDF](examples/espidf/node/main/main.cpp) for full examples. In short (this is nota complete example):
+  See the [Arduino](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/arduino.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/main/main.cpp) for full examples. In short (this is not a complete example):
   ```c++
   struct MyApplicationMessage {
     uint8_t id = 0x01;
@@ -48,18 +48,18 @@ There are a set if different variants of this library you can use.
   }
   ```
 
-- **EspNowNetworkHostDriver**: Use this for your host. This library receives messages from the nodes and forward or handle the received data by handling nodes as Devices. It also provide a way to perform firmware updates by incoperating a [Firmware Checker](src/host_driver/FirmwareChecker.h) which checks for new firmwares on a HTTP server. It is also possible to implement a custom [Firmware Checker](src/host_driver/IFirmwareChecker.h) to match your HTTP server setup. There is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](src/host_driver/FirmwareChecker.h) located [here](firmware%20http%20server).
+- **EspNowNetworkHostDriver**: Use this for your host. This library receives messages from the nodes and forward or handle the received data by handling nodes as Devices. It also provide a way to perform firmware updates by incoperating a [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) which checks for new firmwares on a HTTP server. It is also possible to implement a custom [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/IFirmwareChecker.h) to match your HTTP server setup. There is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) located [here](firmware%20http%20server).
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHostDriver@^0.6.8
+    Johboh/EspNowNetworkHostDriver@^0.7.1
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHostDriver:
-        version: ">=0.6.8"
+        version: ">=0.7.1"
     ```
-  See the [Arduino](examples/arduino/host_driver/HostDriver.ino) or [ESP-IDF](examples/espidf/host_driver/main/main.cpp) for full examples. In short (this is nota complete example):
+  See the [Arduino](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/arduino.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/main/main.cpp) for full examples. In short (this is nota complete example):
   ```c++
   DeviceFootPedal _device_foot_pedal_left(0x543204017648, "Left");
   DeviceFootPedal _device_foot_pedal_right(0x543204016bfc, "Right");
@@ -85,24 +85,24 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkHost**: This is just the bare host library, without a Device Manager, Host Driver nor Firmware Checker. I still recommend using the **EspNowNetworkHostDriver**, but if you want to roll the host fully on your own, this is the library to use.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHost@^0.6.8
+    Johboh/EspNowNetworkHost@^0.7.1
     ```
   - Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/EspNowNetworkHost:
-        version: ">=0.6.8"
+        version: ">=0.7.1"
     ```
 
 - **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects. Instead, use the induvidual libraries listed above.
 
 ### Examples
-- [Arduino: Host](examples/arduino/host/Host.ino)
-- [Arduino: Host Driver](examples/arduino/host_driver/HostDriver.ino)
-- [Arduino: Node](examples/arduino/node/Node.ino)
-- [ESP-IDF: Host](examples/espidf/host/main/main.cpp)
-- [ESP-IDF: Host Driver](examples/espidf/host_driver/main/main.cpp)
-- [ESP-IDF: Node](examples/espidf/node/main/main.cpp)
+- [Arduino: Host](https://github.com/Johboh/EspNowNetworkHost/blob/main/examples/arduino/arduino.ino)
+- [Arduino: Host Driver](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/arduino.ino)
+- [Arduino: Node](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/arduino.ino)
+- [ESP-IDF: Host](https://github.com/Johboh/EspNowNetworkHost/blob/main/examples/espidf/main/main.cpp)
+- [ESP-IDF: Host Driver](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/main/main.cpp)
+- [ESP-IDF: Node](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/main/main.cpp)
 
 ### Parition table (for the Node (and for the host/host driver if using OTA for the host))
 You need to have two app partitions in your parition table to be able to swap between otas. This is an example:

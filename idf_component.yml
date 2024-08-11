@@ -1,7 +1,5 @@
-version: "0.6.8"
-description: Library for setting up a network of ESP NOW nodes
+version: "0.7.1"
+description: Placeholder library for setting up a network of ESP NOW nodes
 url: https://github.com/Johboh/EspNowNetwork
 dependencies:
   idf: ">=4.4"
-  johboh/EspNowNetworkShared:
-    version: ">=1.0.0"

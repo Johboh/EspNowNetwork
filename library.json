@@ -1,13 +1,13 @@
 {
   "name": "EspNowNetwork",
   "keywords": "esp32, esp-now, ESP Now, now",
-  "description": "Library for setting up a network of ESP NOW nodes",
+  "description": "Placeholder library for setting up a network of ESP NOW nodes",
   "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
   "authors":
   {
     "name": "Johan Böhlin"
   },
-  "version": "0.6.8",
+  "version": "0.7.1",
   "license": "MIT",
   "repository":
   {
@@ -16,40 +16,10 @@
   },
   "build": {
       "libLDFMode": "deep",
-      "flags": [
-        "-I src/host",
-        "-I src/node"
-      ]
+      "flags": []
   },
   "frameworks": ["espidf", "arduino"],
   "platforms": ["espressif32"],
-  "examples": [
-    {
-      "name": "Arduino Host",
-      "base": "examples/arduino/host",
-      "files": ["Host.ino"]
-    },
-    {
-      "name": "Arduino Node",
-      "base": "examples/arduino/node",
-      "files": ["Node.ino"]
-    },
-    {
-      "name": "ESP-IDF Host",
-      "base": "examples/espidf/host/main",
-      "files": ["main.cpp"]
-    },
-    {
-      "name": "ESP-IDF Node",
-      "base": "examples/espidf/node/main",
-      "files": ["main.cpp"]
-    }
-  ],
-  "dependencies": [
-    {
-      "owner": "johboh",
-      "name": "EspNowNetworkShared",
-      "version": "^1.0.0"
-    }
-  ]
+  "examples": [],
+  "dependencies": []
 }

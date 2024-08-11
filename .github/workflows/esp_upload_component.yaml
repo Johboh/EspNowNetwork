@@ -3,22 +3,10 @@ on:
   release:
     types: [created]
 jobs:
-  build_examples_for_verification:
-    uses: ./.github/workflows/espidf.yaml
-    with:
-      target_path: "integration/espidf"
-
   upload_components:
     runs-on: ubuntu-latest
-    needs: [build_examples_for_verification]
     steps:
       - uses: actions/checkout@v4.1.1
-
-      - name: Remove sub IDF folders
-        run: rm -rf EspNowNetworkNode EspNowNetworkHost EspNowNetworkHostDriver
-
-      - name: Remove arduino examples and library related files
-        run: rm -rf src/host_driver examples/arduino examples/espidf/host_driver library.json library.properties
 
       - name: Remove github actions
         run: rm -rf .github
