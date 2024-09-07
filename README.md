@@ -31,7 +31,7 @@ There are a set if different variants of this library you can use.
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
-      johboh/EspNowNetworkNode:
+      johboh/espnownetworknode:
         version: ">=0.7.1"
     ```
   - Arduino IDE: Search for `EspNowNetworkNode` by `johboh` in the library manager.
@@ -64,7 +64,7 @@ There are a set if different variants of this library you can use.
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
-      johboh/EspNowNetworkHostDriver:
+      johboh/espnownetworkhostdriver:
         version: ">=0.7.1"
     ```
   - Arduino IDE: Search for `EspNowNetworkHostDriver` by `johboh` in the library manager.
@@ -100,7 +100,7 @@ There are a set if different variants of this library you can use.
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
-      johboh/EspNowNetworkHost:
+      johboh/espnownetworkhost:
         version: ">=0.7.1"
     ```
   - Arduino IDE: Search for `EspNowNetworkHost` by `johboh` in the library manager.
