@@ -26,13 +26,13 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkNode**: Use this for your nodes. This library provide a way to setup ESP-NOW and for sending messages, as well as doing OTA updates when the host indicates that a new firmware version is available.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkNode@^0.7.1
+    Johboh/EspNowNetworkNode@^0.7.5
     ```
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/espnownetworknode:
-        version: ">=0.7.1"
+        version: ">=0.7.5"
     ```
   - Arduino IDE: Search for `EspNowNetworkNode` by `johboh` in the library manager.
 
@@ -59,13 +59,13 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkHostDriver**: Use this for your host. This library receives messages from the nodes and forward or handle the received data by handling nodes as Devices. It also provide a way to perform firmware updates by incoperating a [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) which checks for new firmwares on a HTTP server. It is also possible to implement a custom [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/IFirmwareChecker.h) to match your HTTP server setup. There is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) located [here](firmware%20http%20server).
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHostDriver@^0.7.1
+    Johboh/EspNowNetworkHostDriver@^0.7.2
     ```
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/espnownetworkhostdriver:
-        version: ">=0.7.1"
+        version: ">=0.7.2"
     ```
   - Arduino IDE: Search for `EspNowNetworkHostDriver` by `johboh` in the library manager.
 
@@ -95,13 +95,13 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkHost**: This is just the bare host library, without a Device Manager, Host Driver nor Firmware Checker. I still recommend using the **EspNowNetworkHostDriver**, but if you want to roll the host fully on your own, this is the library to use.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHost@^0.7.1
+    Johboh/EspNowNetworkHost@^0.7.3
     ```
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/espnownetworkhost:
-        version: ">=0.7.1"
+        version: ">=0.7.3"
     ```
   - Arduino IDE: Search for `EspNowNetworkHost` by `johboh` in the library manager.
 
