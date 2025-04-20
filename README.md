@@ -14,29 +14,31 @@
 Arduino (using Arduino IDE or PlatformIO) and ESP-IDF (using Espressif IoT Development Framework or PlatformIO) compatible libraries for setting up a network of [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) nodes.
 
 ### Usage/Purpose
-One use case for the EspNowNetwork is to run a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network of battery powered nodes with sensors, where the nodes will sleep most of the time and low power is an important factor. Nodes will wake up either due to external interrupt (like a PIR sensor or switch) or perodically based on time. Upon wakeup, they will send their sensors values and go back to sleep. On the receiving side, there is a always powered router board that will receive the sensor values and act on or forward them for consumption somewhere else, like MQTT and/or [Home Assistant](https://www.home-assistant.io).
+The prmary use case for the EspNowNetwork is to run a [ESP-NOW](https://www.espressif.com/en/solutions/low-power-solutions/esp-now) network of battery powered nodes with sensors, where the nodes will sleep most of the time and low power consumption is an important factor. Nodes will wake up either due to external interrupt (like a PIR sensor or switch) or perodically based on time. Upon wakeup, they will send their sensors values and go back to sleep. On the receiving side, there is a always powered router board that will receive the sensor values and act on or forward them for consumption somewhere else, like MQTT and/or [Home Assistant](https://www.home-assistant.io).
 
 ### Features
 - **Encryption**: ESP-NOW have built in encryption, but that relies on that the host adds all peers to be able to decrypt messages. There is a limit on how many peers one can have when using encryption (17). So instead there is an application layer encryption applied using [GCM](https://en.wikipedia.org/wiki/Galois/Counter_Mode). Each message is unique and valid only once to prevent replay attacks.
 - **Generic firmware**: For boards that do the same thing (e.g. they have the same hardware), the same firmware can be used for all of them. No unique ID is required to be programmed into each board/node.
 - **Over The Air/OTA**: A node can be updated Over The Air. The node report their firmware version upon handsake, and the host can send back wifi credentials and an URL where to download the new firmware. The node will download the firmware, flash it and restart.
+- **Remote configuration**: The host can send configuration or other payload to configure the nodes, like setting wakeup period or similar.
 
 ### Installation
 There are a set if different variants of this library you can use.
-- **EspNowNetworkNode**: Use this for your nodes. This library provide a way to setup ESP-NOW and for sending messages, as well as doing OTA updates when the host indicates that a new firmware version is available.
+#### For the Node
+- **EspNowNetworkNode**: This library provide a way to setup ESP-NOW and for sending messages, as well as doing OTA updates when the host indicates that a new firmware version is available.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkNode@^0.7.5
+    Johboh/EspNowNetworkNode@^0.8.0
     ```
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/espnownetworknode:
-        version: ">=0.7.5"
+        version: ">=0.8.0"
     ```
   - Arduino IDE: Search for `EspNowNetworkNode` by `johboh` in the library manager.
 
-  See the [Arduino](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/arduino.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/main/main.cpp) for full examples. In short (this is not a complete example):
+  See the [Arduino](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/sleeping_node/sleeping_node.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/sleeping_node/main/main.cpp) for full examples. In short (this is not a complete example):
   ```c++
   struct MyApplicationMessage {
     uint8_t id = 0x01;
@@ -56,20 +58,21 @@ There are a set if different variants of this library you can use.
   }
   ```
 
+#### For the host
 - **EspNowNetworkHostDriver**: Use this for your host. This library receives messages from the nodes and forward or handle the received data by handling nodes as Devices. It also provide a way to perform firmware updates by incoperating a [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) which checks for new firmwares on a HTTP server. It is also possible to implement a custom [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/IFirmwareChecker.h) to match your HTTP server setup. There is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) located [here](firmware%20http%20server).
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHostDriver@^0.7.2
+    Johboh/EspNowNetworkHostDriver@^0.7.4
     ```
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/espnownetworkhostdriver:
-        version: ">=0.7.2"
+        version: ">=0.7.4"
     ```
   - Arduino IDE: Search for `EspNowNetworkHostDriver` by `johboh` in the library manager.
 
-  See the [Arduino](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/arduino.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/main/main.cpp) for full examples. In short (this is nota complete example):
+  See the [Arduino](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/host_driver/host_driver.ino) or [ESP-IDF](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/host_driver/main/main.cpp) for full examples. In short (this is nota complete example):
   ```c++
   DeviceFootPedal _device_foot_pedal_left(0x543204017648, "Left");
   DeviceFootPedal _device_foot_pedal_right(0x543204016bfc, "Right");
@@ -95,25 +98,50 @@ There are a set if different variants of this library you can use.
 - **EspNowNetworkHost**: This is just the bare host library, without a Device Manager, Host Driver nor Firmware Checker. I still recommend using the **EspNowNetworkHostDriver**, but if you want to roll the host fully on your own, this is the library to use.
   - PlatformIO: Add the following to `libs_deps`:
     ```
-    Johboh/EspNowNetworkHost@^0.7.3
+    Johboh/EspNowNetworkHost@^0.8.0
     ```
   - ESP-IDF: Add to `idf_component.yml` next to your main component:
     ```
     dependencies:
       johboh/espnownetworkhost:
-        version: ">=0.7.3"
+        version: ">=0.8.0"
     ```
   - Arduino IDE: Search for `EspNowNetworkHost` by `johboh` in the library manager.
 
 - **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects. Instead, use the induvidual libraries listed above.
 
+### Package flow and challenge requests
+
+If the host allows it, challenge requests can be skipped by calling [allowToSkipChallengeVerification](https://github.com/Johboh/EspNowNetworkHost/blob/main/src/EspNowHost.h#L171) and nodes can configure to not send challenge requests by configuring the [challenge_requests](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L185) integer. The host will require challenge request unless explicilty disabled per node.
+
+Normally challenge requests are used to prevent replay attacks, by nodes requesting a unique challenge from the host that the node use in the subsequent message. This challenge is randomized by the host. Upon responding to the challenge request, the host also have the option to indicate that there is a new firmware as well as send any additional payload/configuration. By skipping the challenge request, these two options are not possible. During the challenge request, there is a detection mechanism to detect WiFi channel change as well as change of host, if we prevoulsy had a valid channel and host. If challenge request is disabled, this check will also not happen. However, if the [sendMessage](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L225) function return non positive result, one could assume the the channel/host is invalid and can fall forgetHost() to try finding the host/channel again on next message sending attempt.
+
+Challenge requests involves sending and receiving one additional package. Disabling challenge request will reduce latency and save power consumption, but with a cost in terms of reduced security, error detection and firwmare/payload support.
+
+One could ocacionally send messages with challenge request to check for firmware update, payloads and detect WiFi channel/host changes.
+
+### Firmare Update/OTA
+Firmare updates works in such a way that when the host received a challenge request from the node, the host checks if there is a new firmware, and if so, return a firmware update reply to the client. This reply contains wifi credentials and a link to the binary to download the new firmware from. The node will then connect to WiFi and downloads the firmware. In future versions, there might be a way to upload the firmware via ESP-NOW, eliminating WiFi, but this will be a much slower process.
+
+If using `EspNowNetworkHostDriver`, there is an example of a HTTP server to use for the firmware for the default implementation of the [Firmware Checker](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/src/FirmwareChecker.h) located [here](firmware%20http%20server).
+
+### Deliver payload/configuration
+The host can deliver payload to a node, which will be delivered as a response to a challenge request by the node. Use the [setPayload](https://github.com/Johboh/EspNowNetworkHost/blob/main/src/EspNowHost.h#L142) to set the payload for a node. The node will receive the payload in the [Result](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L205) returned by the [sendMessage](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L225) function.
+
+For this to work, challenge requests needs to be enabled (enabled by default).
+
+### Unix timestamp
+The host includes a timestamp in milliseconds in each challange response (in the normal and payload responses, not the firmware update one). The node can access this in the [Result](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L212) returned by the [sendMessage](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L225) function.
+
+For this to work the host need to set the time accordingly, either just UTC or time zone corrected. Check out the [examples](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/host_driver/main/main.cpp#L110) for the host drivers on how to do this.
+
 ### Examples
-- [Arduino: Host](https://github.com/Johboh/EspNowNetworkHost/blob/main/examples/arduino/arduino.ino)
-- [Arduino: Host Driver](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/arduino.ino)
-- [Arduino: Node](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/arduino.ino)
-- [ESP-IDF: Host](https://github.com/Johboh/EspNowNetworkHost/blob/main/examples/espidf/main/main.cpp)
-- [ESP-IDF: Host Driver](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/main/main.cpp)
-- [ESP-IDF: Node](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/main/main.cpp)
+- [Arduino: Host](https://github.com/Johboh/EspNowNetworkHost/blob/main/examples/arduino/host/host.ino)
+- [Arduino: Host Driver](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/arduino/host_driver/host_driver.ino)
+- [Arduino: Node](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/arduino/sleeping_node/sleeping_node.ino)
+- [ESP-IDF: Host](https://github.com/Johboh/EspNowNetworkHost/blob/main/examples/espidf/host/main/main.cpp)
+- [ESP-IDF: Host Driver](https://github.com/Johboh/EspNowNetworkHostDriver/blob/main/examples/espidf/host_driver/main/main.cpp)
+- [ESP-IDF: Node](https://github.com/Johboh/EspNowNetworkNode/blob/main/examples/espidf/sleeping_node/main/main.cpp)
 
 ### Parition table (for the Node (and for the host/host driver if using OTA for the host))
 You need to have two app partitions in your parition table to be able to swap between otas. This is an example:
