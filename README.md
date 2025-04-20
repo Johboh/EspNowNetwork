@@ -111,6 +111,35 @@ There are a set if different variants of this library you can use.
 - **EspNowNetwork**: This is the legacy full library consiting of both the node and the host code (but not the host driver). Not recommended for new projects. Instead, use the induvidual libraries listed above.
 
 ### Package flow and challenge requests
+```mermaid
+sequenceDiagram
+    participant Host
+    participant Node
+
+    Note right of Node: Sleeping...
+    Note right of Node: Zzz...
+
+    alt With challenge requests (default required)
+        Node->>Host: Challenge Request
+        alt Normal response
+            Host-->>Node: Challenge Reply (challenge = 42)
+            Node->>Host: Application Message (using challenge 42)
+            Host-->>Host: Handle application message (verify challenge is 42)
+        else Firmware update
+            Host-->>Node: Challenge Reply (new firmware available)
+            Node->>Node: Download firmware via HTTP
+            Node->>Node: Apply firmware and restart
+        else Payload reply
+            Host-->>Node: Challenge Reply (with payload + challenge = 42)
+            Node->>Host: Application Message (using challenge 42)
+            Host-->>Host: Handle application message (verify challenge is 42)
+        end
+    else Wihout challenge request
+        Node->>Host: Application Message (no challenge)
+        Host-->>Host: Handle application message (no verification)
+    end
+
+```
 
 If the host allows it, challenge requests can be skipped by calling [allowToSkipChallengeVerification](https://github.com/Johboh/EspNowNetworkHost/blob/main/src/EspNowHost.h#L171) and nodes can configure to not send challenge requests by configuring the [challenge_requests](https://github.com/Johboh/EspNowNetworkNode/blob/main/src/EspNowNode.h#L185) integer. The host will require challenge request unless explicilty disabled per node.
 
