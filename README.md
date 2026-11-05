@@ -199,3 +199,6 @@ Newer version most probably work too, but they have not been verified.
     build_unflags=-std=gnu++11 # "Disable" C++11
     build_flags=-std=gnu++17 # "Enable" C++17
     ```
+
+### License
+Licensed under the GNU General Public License v3.0 or later
